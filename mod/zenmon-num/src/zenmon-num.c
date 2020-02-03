@@ -111,12 +111,12 @@ static void num_getStatus(void) //----------------------------------------------
 {
     // electrical
     mDB.vcpu.now = num_readFile(mDB.vcpu.FD);                           // milivolts
-    mDB.acpu.now = num_readFile(mDB.acpu.FD); mDB.acpu.now /= 1000u;    //     amperes
-    mDB.wcpu.now = num_readFile(mDB.wcpu.FD); mDB.wcpu.now /= 1000000u; //     watts
+    mDB.acpu.now = num_readFile(mDB.acpu.FD); mDB.acpu.now /= 500u;     //     amperes; /2 to counter zenpower issue
+    mDB.wcpu.now = num_readFile(mDB.wcpu.FD); mDB.wcpu.now /= 500000u;  //     watts  ; /2 to counter zenpower issue
 
     mDB.vsoc.now = num_readFile(mDB.vsoc.FD);                           // milivolts
-    mDB.asoc.now = num_readFile(mDB.asoc.FD); mDB.asoc.now /= 1000u;    //     amperes
-    mDB.wsoc.now = num_readFile(mDB.wsoc.FD); mDB.wsoc.now /= 1000000u; //     watts
+    mDB.asoc.now = num_readFile(mDB.asoc.FD); mDB.asoc.now /= 500u;     //     amperes; /2 to counter zenpower issue
+    mDB.wsoc.now = num_readFile(mDB.wsoc.FD); mDB.wsoc.now /= 500000u;  //     watts  ; /2 to counter zenpower issue
 
     // temperature
     mDB.tdie.now = num_readFile(mDB.tdie.FD); mDB.tdie.now /= 1000u;    //    °Celsius
