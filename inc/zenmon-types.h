@@ -33,10 +33,10 @@ typedef struct metricTypeTag // data related to a single zenpower metric
 
 typedef struct metricsTypeTag // all zenpower metrics
 {
-    metricType vcore; // milivolts
+    metricType vcore; // millivolts
     metricType acore; //     amperes
     metricType wcore; //     watts
-    metricType  vsoc; // milivolts
+    metricType  vsoc; // millivolts
     metricType  asoc; //     amperes
     metricType  wsoc; //     watts
     metricType  cdie; //    °Celsius
@@ -47,10 +47,10 @@ typedef struct metricsTypeTag // all zenpower metrics
 
 typedef struct graphBufferTypeTag // graph buffers
 {
-    uint8 vcore[LEN_GR_BUF]; // milivolts
+    uint8 vcore[LEN_GR_BUF]; // millivolts
     uint8 acore[LEN_GR_BUF]; //     amperes
     uint8 wcore[LEN_GR_BUF]; //     watts
-    uint8  vsoc[LEN_GR_BUF]; // milivolts
+    uint8  vsoc[LEN_GR_BUF]; // millivolts
     uint8  asoc[LEN_GR_BUF]; //     amperes
     uint8  wsoc[LEN_GR_BUF]; //     watts
     uint8  cdie[LEN_GR_BUF]; //    °Celsius
