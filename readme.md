@@ -22,6 +22,7 @@ At this point I would consider it feature-complete. I will certainly maintain/im
 </p>
 
 * This preview is running at 100ms/sample
+* For the display I use centivolts instead of milivolts for better text alignment; in the code they are milivolts, and the variables associated with them are as named as volts
 * The labeling for the usage and mHz bars are a bit messy, but that's the best way I have found to make them work
 * The RAM usage bar is there, and it gets red at 50% load; it's just that rendering in Blender to get the other stats to rise and fall doesn't use that much RAM to get that bar going
 * For each Braille graph, the scales, value of each dot and the point at which is turns red can be found in the `cfg` directory. By default they are set to something reasonable, that also works well with the limitations imposed by working with 2x4 "pixels" Braille characters.
