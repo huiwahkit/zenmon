@@ -1,7 +1,7 @@
 // Copyright (C) 2020 Denis Isai
 
 //======================================================================================================================
-// INCLUSIONS
+// INCLUDES
 //======================================================================================================================
 // system includes
 #include <string.h>
@@ -17,34 +17,34 @@
 //======================================================================================================================
 // VARIABLES
 //======================================================================================================================
-static graphBufferType graphBuffer;
-static metricsType*    metricsDB;
+static graphBufferType gDB;
+static metricsType*    mDB;
 
 //======================================================================================================================
 // FUNCTIONS
 //======================================================================================================================
-static void dot_drawGraph(metricType* const metric, uint8* const graph, const uint16 width, \
-                                                                         const uint8 dot) //-------------- dot_drawGraph
+static void dot_graphRefresh(metricType* const metric, uint8* const graph, const uint16 width, \
+                                                                           const uint8  dot) //-------- dot_graphRefresh
 {
     uint16 index;
 
     // advance the history graph
     for(index = 0u; index < (width - 1u); index++)
     {
-        (*metric).hst[index] = (*metric).hst[index + 1u];
+        (*metric).hst[index] = (*metric).hst[index + 1];
     }
 
     // set latest value
-    (*metric).hst[width - 1u] = (*metric).now;
+    (*metric).hst[width - 1] = (*metric).now;
 
     // draw the new graph
     for(index = 0u; index < (width - 1u); index++)
     {
-        braille_line(graph, index, (*metric).hst[index] / dot, index + 1u, (*metric).hst[index + 1u] / dot);
+        braille_line(graph, index, (*metric).hst[index] / dot, index + 1u, (*metric).hst[index + 1] / dot);
     }
 }
 
-static void dot_eGraph(uint8* const gBuff, const uint16 xPos, const uint16 yPos) //-------------------------- dot_eGraph
+static void dot_eGraphDraw(uint8* const graph, const uint16 xPos, const uint16 yPos) //------------------ dot_eGraphDraw
 {
     uint16  xLen = 0u;
     sint16  yLen = 0;
@@ -55,21 +55,17 @@ static void dot_eGraph(uint8* const gBuff, const uint16 xPos, const uint16 yPos)
     {
         for(xLen = 0u; xLen < LEN_GR_C_X; xLen++)
         {
-            if(yLen >= LEN_GR_C_Y - 1) // colour change is hardcoded based on LIM_V, LIM_A and LIM_W
-            {
-                colour = F_RED;
-            }
-            else
-            {
-                colour = F_GRN;
-            }
+            // colour change is hardcoded based on LIM_V, LIM_A and LIM_W
+            ((LEN_GR_C_Y - 1) <= yLen) ? (colour = F_RED) : (colour = F_GRN);
 
-            PRINTL(xPos + xLen + 1u, yPos + LEN_GR_C_Y - yLen, "%s%lc", colour, *(gBuff + (yLen * LEN_GR_C_X) + xLen) | BRAILLE_NULL);
+            // print the Braille symbol in the correct position
+            PRINTL(xPos + xLen + 1u, yPos + LEN_GR_C_Y - yLen, "%s%lc", colour, \
+                 *(graph + (yLen * LEN_GR_C_X) + xLen) | BRAILLE_NULL);
         }
     }
 }
 
-static void dot_tGraph(uint8* const gBuff, const uint16 xPos, const uint16 yPos) //-------------------------- dot_tGraph
+static void dot_tGraphDraw(uint8* const graph, const uint16 xPos, const uint16 yPos) //------------------ dot_tGraphDraw
 {
     uint16  xLen = 0u;
     sint16  yLen = 0;
@@ -80,16 +76,12 @@ static void dot_tGraph(uint8* const gBuff, const uint16 xPos, const uint16 yPos)
     {
         for(xLen = 0u; xLen < LEN_GR_C_X; xLen++)
         {
-            if(yLen >= LEN_GR_C_Y - 2) // colour change is hardcoded based on LIM_T
-            {
-                colour = F_RED;
-            }
-            else
-            {
-                colour = F_CYN;
-            }
+            // colour change is hardcoded based on LIM_C
+            ((LEN_GR_C_Y - 2) <= yLen) ? (colour = F_RED) : (colour = F_CYN);
 
-            PRINTL(xPos + xLen + 1u, yPos + LEN_GR_C_Y - yLen, "%s%lc", colour, *(gBuff + (yLen * LEN_GR_C_X) + xLen) | BRAILLE_NULL);
+            // print the Braille symbol in the correct position
+            PRINTL(xPos + xLen + 1u, yPos + LEN_GR_C_Y - yLen, "%s%lc", colour, \
+                 *(graph + (yLen * LEN_GR_C_X) + xLen) | BRAILLE_NULL);
         }
     }
 }
@@ -97,59 +89,62 @@ static void dot_tGraph(uint8* const gBuff, const uint16 xPos, const uint16 yPos)
 //======================================================================================================================
 // API
 //======================================================================================================================
-void dot_init() //--------------------------------------------------------------------------------------------- dot_init
+void dot_init(void) //----------------------------------------------------------------------------------------- dot_init
 {
-    memset(&graphBuffer, 0u, sizeof(graphBuffer)); // clear braille buffers
-    num_exportDB(&metricsDB);                      // import the numeric databases
+    num_exportDB(&mDB); // import the numeric databases
 }
 
-void dot_updateGraphs(void) //------------------------------------------------------------------------- dot_updateGraphs
+void dot_refresh(void) //----------------------------------------------------------------------------------- dot_refresh
 {
     // clear the previous screen state
-    memset(&graphBuffer, 0u, sizeof(graphBuffer));
+    memset(&gDB, 0u, sizeof(gDB));
 
     // electrical
-    dot_drawGraph(&((*metricsDB).vcpu), graphBuffer.vcpu, LEN_GR_D_X, V_D_VALUE);
-    dot_drawGraph(&((*metricsDB).acpu), graphBuffer.acpu, LEN_GR_D_X, A_D_VALUE);
-    dot_drawGraph(&((*metricsDB).wcpu), graphBuffer.wcpu, LEN_GR_D_X, W_D_VALUE);
+    dot_graphRefresh(&((*mDB).vcore), gDB.vcore, LEN_GR_D_X, V_D_VALUE);
+    dot_graphRefresh(&((*mDB).acore), gDB.acore, LEN_GR_D_X, A_D_VALUE);
+    dot_graphRefresh(&((*mDB).wcore), gDB.wcore, LEN_GR_D_X, W_D_VALUE);
 
-    dot_drawGraph(&((*metricsDB).vsoc), graphBuffer.vsoc, LEN_GR_D_X, V_D_VALUE);
-    dot_drawGraph(&((*metricsDB).asoc), graphBuffer.asoc, LEN_GR_D_X, A_D_VALUE);
-    dot_drawGraph(&((*metricsDB).wsoc), graphBuffer.wsoc, LEN_GR_D_X, W_D_VALUE);
+    dot_graphRefresh(&((*mDB).vsoc) , gDB.vsoc , LEN_GR_D_X, V_D_VALUE);
+    dot_graphRefresh(&((*mDB).asoc) , gDB.asoc , LEN_GR_D_X, A_D_VALUE);
+    dot_graphRefresh(&((*mDB).wsoc) , gDB.wsoc , LEN_GR_D_X, W_D_VALUE);
 
     // temperatur
-    dot_drawGraph(&((*metricsDB).tdie), graphBuffer.tcpu, LEN_GR_D_X, T_D_VALUE);
-    dot_drawGraph(&((*metricsDB).tctl), graphBuffer.tctl, LEN_GR_D_X, T_D_VALUE);
-    dot_drawGraph(&((*metricsDB).tcd1), graphBuffer.tcd1, LEN_GR_D_X, T_D_VALUE);
-    dot_drawGraph(&((*metricsDB).tcd2), graphBuffer.tcd2, LEN_GR_D_X, T_D_VALUE);
+    dot_graphRefresh(&((*mDB).cdie) , gDB.cdie , LEN_GR_D_X, C_D_VALUE);
+    dot_graphRefresh(&((*mDB).cctl) , gDB.cctl , LEN_GR_D_X, C_D_VALUE);
+    dot_graphRefresh(&((*mDB).cccd0), gDB.cccd0, LEN_GR_D_X, C_D_VALUE);
+    dot_graphRefresh(&((*mDB).cccd1), gDB.cccd1, LEN_GR_D_X, C_D_VALUE);
 }
 
-void dot_eGraphWin(const uint16 xPos, const uint16 yPos) //----------------------------------------------- dot_eGraphWin
+void dot_eGraph(uint16 xPos, const uint16 yPos) //----------------------------------------------------------- dot_eGraph
 {
     // draw graphs
-    dot_eGraph(graphBuffer.vcpu, xPos + 1u, yPos                    );
-    dot_eGraph(graphBuffer.acpu, xPos + 1u, yPos +  LEN_GR_C_Y      );
-    dot_eGraph(graphBuffer.wcpu, xPos + 1u, yPos + (LEN_GR_C_Y * 2u));
+    xPos += 1u;
+    dot_eGraphDraw(gDB.vcore, xPos, yPos                    );
+    dot_eGraphDraw(gDB.acore, xPos, yPos +  LEN_GR_C_Y      );
+    dot_eGraphDraw(gDB.wcore, xPos, yPos + (LEN_GR_C_Y * 2u));
 
-    // print graph labels
-    PRINTL(xPos + 2u, yPos +  LEN_GR_C_Y      , "%sV %d:%s%u ", F_RST, V_D_VALUE, F_RED, LIM_V);
-    PRINTL(xPos + 2u, yPos + (LEN_GR_C_Y * 2u), "%sA %d:%s%u ", F_RST, A_D_VALUE, F_RED, LIM_A);
-    PRINTL(xPos + 2u, yPos + (LEN_GR_C_Y * 3u), "%sW %d:%s%u ", F_RST, W_D_VALUE, F_RED, LIM_W);
+    // print current values; voltage is converted from mV to cV
+    xPos += (LEN_GR_C_X - 3u);
+    PRINTL(xPos, yPos +  LEN_GR_C_Y      , " %s%3u", CHK_LIM((*mDB).vcore.now, LIM_V, F_RED), (*mDB).vcore.now / 10u);
+    PRINTL(xPos, yPos + (LEN_GR_C_Y * 2u), " %s%3u", CHK_LIM((*mDB).acore.now, LIM_A, F_RED), (*mDB).acore.now);
+    PRINTL(xPos, yPos + (LEN_GR_C_Y * 3u), " %s%3u", CHK_LIM((*mDB).wcore.now, LIM_W, F_RED), (*mDB).wcore.now);
 }
 
-void dot_tGraphWin(const uint16 xPos, const uint16 yPos) //----------------------------------------------- dot_tGraphWin
+void dot_tGraph(uint16 xPos, const uint16 yPos) //----------------------------------------------------------- dot_tGraph
 {
     // draw graphs
-    dot_tGraph(graphBuffer.tcpu, xPos + 1u, yPos                    );
-    dot_tGraph(graphBuffer.tctl, xPos + 1u, yPos +  LEN_GR_C_Y      );
-    dot_tGraph(graphBuffer.tcd1, xPos + 1u, yPos + (LEN_GR_C_Y * 2u));
-    dot_tGraph(graphBuffer.tcd2, xPos + 1u, yPos + (LEN_GR_C_Y * 3u));
+    xPos += 1;
+    dot_tGraphDraw(gDB.cdie , xPos, yPos                    );
+    dot_tGraphDraw(gDB.cctl , xPos, yPos +  LEN_GR_C_Y      );
+    dot_tGraphDraw(gDB.cccd0, xPos, yPos + (LEN_GR_C_Y * 2u));
+    dot_tGraphDraw(gDB.cccd1, xPos, yPos + (LEN_GR_C_Y * 3u));
 
-    // print graph labels
-    PRINTL(xPos + 2u, yPos +  LEN_GR_C_Y      , "%sTCPU %d:%s%u ", F_RST, T_D_VALUE, F_RED, LIM_T);
-    PRINTL(xPos + 2u, yPos + (LEN_GR_C_Y * 2u), "%sTCTL %d:%s%u ", F_RST, T_D_VALUE, F_RED, LIM_T);
-    PRINTL(xPos + 2u, yPos + (LEN_GR_C_Y * 3u), "%sTCD1 %d:%s%u ", F_RST, T_D_VALUE, F_RED, LIM_T);
-    PRINTL(xPos + 2u, yPos + (LEN_GR_C_Y * 4u), "%sTCD2 %d:%s%u ", F_RST, T_D_VALUE, F_RED, LIM_T);
+    // print current values
+    xPos += LEN_GR_C_X - 2u;
+    PRINTL(xPos, yPos +  LEN_GR_C_Y      , " %s%2u", CHK_LIM((*mDB).cdie.now , LIM_C, F_RED), (*mDB).cdie.now);
+    PRINTL(xPos, yPos + (LEN_GR_C_Y * 2u), " %s%2u", CHK_LIM((*mDB).cctl.now , LIM_C, F_RED), (*mDB).cctl.now);
+    PRINTL(xPos, yPos + (LEN_GR_C_Y * 3u), " %s%2u", CHK_LIM((*mDB).cccd0.now, LIM_C, F_RED), (*mDB).cccd0.now);
+    PRINTL(xPos, yPos + (LEN_GR_C_Y * 4u), " %s%2u", CHK_LIM((*mDB).cccd1.now, LIM_C, F_RED), (*mDB).cccd1.now);
 }
 
 //======================================================================================================================

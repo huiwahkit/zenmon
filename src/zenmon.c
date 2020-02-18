@@ -1,7 +1,7 @@
 // Copyright (C) 2020 Denis Isai
 
 //======================================================================================================================
-// INCLUSIONS
+// INCLUDES
 //======================================================================================================================
 // system includes
 #include <stdio.h>
@@ -9,9 +9,11 @@
 #include <unistd.h>
 #include <locale.h>
 #include <signal.h>
+#include <sys/ioctl.h>
 
 // dependency includes
 #include "gen-types.h"
+#include "logging.h"
 #include "braille-lib.h"
 
 // local includes
@@ -24,6 +26,10 @@
 //======================================================================================================================
 // DEFINES
 //======================================================================================================================
+#define VERSION_MAJOR 1
+#define VERSION_MINOR 0
+#define VERSION_PATCH 0
+
 #define UNTIL_SIGNAL 1
 
 //======================================================================================================================
@@ -43,51 +49,76 @@ static uint32 sampleRate = 1000000; // default delay of 1s
 //======================================================================================================================
 // FUNCTIONS
 //======================================================================================================================
-static void zenmon_signalHandler() //------------------------------------------------------------------ zenmon_signalHandler
+static void zenmon_signalHandler() //-------------------------------------------------------------- zenmon_signalHandler
 {
     num_deinit();
-    SHOW_CURSOR;
+    CURSOR_SHOW;
     CLEAR_SCREEN;
     exit(EXIT_SUCCESS);
 }
 
-void zenmon_getopt(int argc, char* const argv[]) //----------------------------------------------------------- zenmon_getopt
+void zenmon_getopt(int argc, char* const argv[]) //------------------------------------------------------- zenmon_getopt
 {
     sint8 option;
-    uint8 exitFlag = FALSE;
+    uint8 exitFlag = 0u; // 0 for normal operation, 1 for help/error, 2 for version
 
-    while(-1 != (option = getopt(argc, argv, ":r:h")))
+    opterr = 0;
+    while(-1 != (option = getopt(argc, argv, "r:hv")))
     {
         switch(option)
         {
             case 'r':
+            {
                 sampleRate = (atoi(optarg) * 1000);
                 break;
+            }
             case 'h':
-                exitFlag = TRUE;
+            {
+                exitFlag = 1u;
                 break;
-            case ':': // used for options that require arguments, but don't have them
-                printf("%sOption needs a value\n", F_RED);
-                exitFlag = TRUE;
+            }
+            case 'v':
+            {
+                exitFlag = 2u;
                 break;
-            case '?': // used for unknown options
-                printf("%sUnknown option: %c\n", F_RED, optopt);
-                exitFlag = TRUE;
+            }
+            case '?':
+            {
+                if('r' == optopt)
+                {
+                    PRINT_FAIL("Option needs an argument: -%c", optopt);
+                }
+                else
+                {
+                    PRINT_FAIL("Unknown option: -%c", optopt);
+                }
+                exitFlag = 1u;
                 break;
+            }
             default:
+            {
                 break;
+            }
         }
     }
 
     for(; optind < argc; optind++)
     {
-        printf("%sOptions received extra arguments: %s\n", F_RED, argv[optind]);
+        PRINT_FAIL("Non-option argument: %s", argv[optind]);
         exitFlag = TRUE;
     }
 
-    if(TRUE == exitFlag)
+    if(1u == exitFlag)
     {
-        printf("%sUsage: ./zenmon -r <sample rate in ms>; default is 1s\n", F_YEL);
+        PRINT_INFO("Usage:");
+        PRINT_TEXT("-r\t\tset the sample rate in ms; default is 1000");
+        PRINT_TEXT("-h\t\tprint this message");
+        PRINT_TEXT("-v\t\tprint the build version");
+        exit(EXIT_SUCCESS);
+    }
+    else if(2u == exitFlag)
+    {
+        PRINT_INFO("zenmon version %d.%d.%d", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
         exit(EXIT_SUCCESS);
     }
 }
@@ -97,46 +128,79 @@ void zenmon_getopt(int argc, char* const argv[]) //-----------------------------
 //======================================================================================================================
 int main(int argc, char* const argv[]) //-------------------------------------------------------------------------- main
 {
-    // set coordinates
-    const coordType locStatusWin = {4u, 2u};
-    const coordType locEGraphWin = {51u, 2u};
-    const coordType locTGraphWin = {51u, 19u};
+    // info related to the terminal window sizes
+    struct winsize oldTerm;
+    struct winsize nowTerm;
+
+    // set window coordinates
+    const coordType svi2Pos   = {4u , 2u };
+    const coordType loadPos   = {4u , 16u};
+    const coordType eGraphPos = {51u, 2u };
+    const coordType tGraphPos = {51u, 19u};
+
+    // initialize to 0, so in the first iteration the window borders will be printed
+    oldTerm.ws_row = 0;
+    oldTerm.ws_col = 0;
 
     signal(SIGINT , zenmon_signalHandler); // handle keyboard interrupt
     signal(SIGTERM, zenmon_signalHandler); // handle termination
     signal(SIGQUIT, zenmon_signalHandler); // handle keyboard quit
     signal(SIGSTOP, zenmon_signalHandler); // handle stop
     signal(SIGABRT, zenmon_signalHandler); // handle abort() call
-    setlocale(LC_ALL, "");               // enable Braille support
+    setlocale(LC_ALL, "");                 // enable Braille support
     zenmon_getopt(argc, argv);
-    HIDE_CURSOR;
-    CLEAR_SCREEN;
+    CURSOR_HIDE;
+    TERM_NAME("zenmon");
 
     num_init();
     dot_init();
     braille_init(LEN_GR_C_X); // set graph width in characters
 
-    // draw status boxes
-    box_status("SCI2"              , locStatusWin.xPos, locStatusWin.yPos, F_BLU);
-    box_eGraph("Electrical status" , locEGraphWin.xPos, locEGraphWin.yPos, F_BLU);
-    box_tGraph("Temperature status", locTGraphWin.xPos, locTGraphWin.yPos, F_BLU);
-
     // fill boxes
     while(UNTIL_SIGNAL)
     {
-        // process numeric values
-        num_statusWin(locStatusWin.xPos, locStatusWin.yPos);
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &nowTerm); // get the terminal size
 
-        // handle graphs
-        dot_updateGraphs();
-        dot_eGraphWin(locEGraphWin.xPos, locEGraphWin.yPos);
-        dot_tGraphWin(locTGraphWin.xPos, locTGraphWin.yPos);
+        // if the terminal size changed, refresh the static status boxes
+        if((oldTerm.ws_row != nowTerm.ws_row) || \
+           (oldTerm.ws_col != nowTerm.ws_col))
+        {
+            CLEAR_SCREEN;
+            box_svi2(  "SVI2 Overview"   ,   svi2Pos.xPos,   svi2Pos.yPos, F_BLU);
+            box_load(  "System Load"     ,   loadPos.xPos,   loadPos.yPos, F_BLU);
+            box_eGraph("SVI2 Core cV/A/W", eGraphPos.xPos, eGraphPos.yPos, F_BLU);
+            box_tGraph("SVI2 CPU °C"     , tGraphPos.xPos, tGraphPos.yPos, F_BLU);
+        }
 
-        fflush(stdout);     // stop text flickering
+        // check the terminal window size
+        if(((LEN_SVI2_W_X + LEN_EG_W_X   + 5) > nowTerm.ws_col) || \
+           ((LEN_SVI2_W_Y + LEN_LOAD_W_Y + 2) > nowTerm.ws_row))
+        {
+            CLEAR_SCREEN;
+            PRINT_FAIL("Terminal size too small; resize it to display data...");
+        }
+        else // start normal operation
+        {
+            // aquire and process the data
+            num_svi2(svi2Pos.xPos, svi2Pos.yPos);
+            num_load(loadPos.xPos, loadPos.yPos);
+
+            // refresh and print graph buffers
+            dot_refresh();
+            dot_eGraph(eGraphPos.xPos, eGraphPos.yPos);
+            dot_tGraph(tGraphPos.xPos, tGraphPos.yPos);
+
+            fflush(stdout); // stop text flickering
+        }
+
+        // save the current terminal size to compare against in the next iteration
+        oldTerm.ws_row = nowTerm.ws_row;
+        oldTerm.ws_col = nowTerm.ws_col;
+
         usleep(sampleRate); // wait
     }
 
-    // normally unreachable
+    // unreachable
     zenmon_signalHandler();
     return EXIT_SUCCESS;
 }

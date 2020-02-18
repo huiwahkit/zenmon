@@ -1,7 +1,7 @@
 // Copyright (C) 2020 Denis Isai
 
 //======================================================================================================================
-// INCLUSIONS
+// INCLUDES
 //======================================================================================================================
 // dependency includes
 #include "braille-lib.h"
@@ -40,39 +40,44 @@ static void box_draw(const uint16 xPos , const uint16 yPos , \
 //======================================================================================================================
 // API
 //======================================================================================================================
-void box_status(const sint8* title, const uint16 xPos, const uint16 yPos, const sint8* colour) //------------ box_status
+void box_svi2(const sint8* title, uint16 xPos, uint16 yPos, const sint8* colour) //---------------------------- box_svi2
 {
-    uint16 xText = xPos + 2u;
-    uint16 yText = yPos;
+    box_draw(xPos, yPos, LEN_SVI2_W_X, LEN_SVI2_W_Y, colour);
 
-    box_draw(xPos, yText, LEN_STATUS_W_X, LEN_STATUS_W_Y, colour);
-    PRINTL(xText, yText++, " %s%s ", F_RST, title);
+    xPos += 2u;
+    PRINTL(xPos, yPos++, " %s ", title);
 
     // print labels
-    PRINTL(xText, yText++, "%s%s%s" , F_RST, F_BLD, "Sensor    Min      Val      Max      Avg");
-    PRINTL(xText, yText++, "%s%s"   , F_RST,        "V_CPU");
-    PRINTL(xText, yText++, "%s%s"   , F_RST,        "A_CPU");
-    PRINTL(xText, yText++, "%s%s"   , F_RST,        "W_CPU");
-    PRINTL(xText, yText++, "%s%s"   , F_RST,        "V_SOC");
-    PRINTL(xText, yText++, "%s%s"   , F_RST,        "A_SOC");
-    PRINTL(xText, yText++, "%s%s"   , F_RST,        "W_SOC");
-    PRINTL(xText, yText++, "%s%s"   , F_RST,        "───────────────────────────────────────────");
-    PRINTL(xText, yText++, "%s%s"   , F_RST,        "T_DIE");
-    PRINTL(xText, yText++, "%s%s"   , F_RST,        "T_CTL");
-    PRINTL(xText, yText++, "%s%s"   , F_RST,        "T_CD1");
-    PRINTL(xText, yText++, "%s%s"   , F_RST,        "T_CD2");
+    PRINTL(xPos, yPos++, "%s Sensor     Min      Val      Max      Avg", F_BLD);
+    PRINTL(xPos, yPos++, "cV·Core");
+    PRINTL(xPos, yPos++, " A·Core");
+    PRINTL(xPos, yPos++, " W·Core");
+    PRINTL(xPos, yPos++, "cV·SoC");
+    PRINTL(xPos, yPos++, " A·SoC");
+    PRINTL(xPos, yPos++, " W·SoC");
+    PRINTL(xPos, yPos++, "───────────────────────────────────────────");
+    PRINTL(xPos, yPos++, "°C·Die");
+    PRINTL(xPos, yPos++, "°C·Ctl");
+    PRINTL(xPos, yPos++, "°C·CCD0");
+    PRINTL(xPos, yPos++, "°C·CCD1");
+}
+
+void box_load(const sint8* title, uint16 const xPos, uint16 const yPos, const sint8* colour) //---------------- box_load
+{
+    box_draw(xPos, yPos, LEN_LOAD_W_X, LEN_LOAD_W_Y, colour);
+    PRINTL(xPos + 2u, yPos, " %s ", title);
 }
 
 void box_eGraph(const sint8* title, uint16 const xPos, uint16 const yPos, const sint8* colour) //------------ box_eGraph
 {
     box_draw(xPos, yPos, LEN_EG_W_X, LEN_EG_W_Y, colour);
-    PRINTL(xPos + 2u, yPos + 0u, " %s%s ", F_RST, title);
+    PRINTL(xPos + 2u, yPos, " %s ", title);
 }
 
 void box_tGraph(const sint8* title, uint16 const xPos, const uint16 yPos, const sint8* colour) //------------ box_tGraph
 {
-    box_draw(xPos, yPos, LEN_TG_W_X, LEN_TG_W_Y, colour);
-    PRINTL(xPos + 2u, yPos + 0u, " %s%s ", F_RST, title);
+    box_draw(xPos, yPos, LEN_CG_W_X, LEN_CG_W_Y, colour);
+    PRINTL(xPos + 2u, yPos, " %s ", title);
 }
 
 //======================================================================================================================

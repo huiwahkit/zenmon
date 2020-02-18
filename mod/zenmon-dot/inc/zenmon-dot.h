@@ -4,7 +4,7 @@
 #define ZENMON_DOT_H
 
 //======================================================================================================================
-// INCLUSIONS
+// INCLUDES
 //======================================================================================================================
 // dependency includes
 #include "gen-types.h"
@@ -16,9 +16,9 @@
 // API
 //======================================================================================================================
 void dot_init(void);
-void dot_updateGraphs(void);
-void dot_eGraphWin(const uint16 xPos, const uint16 yPos);
-void dot_tGraphWin(const uint16 xPos, const uint16 yPos);
+void dot_refresh(void);
+void dot_eGraph(uint16 xPos, const uint16 yPos);
+void dot_tGraph(uint16 xPos, const uint16 yPos);
 
 //======================================================================================================================
 // END OF FILE

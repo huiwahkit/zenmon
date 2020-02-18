@@ -4,7 +4,7 @@
 #define ZENMON_NUM_H
 
 //======================================================================================================================
-// INCLUSIONS
+// INCLUDES
 //======================================================================================================================
 // dependency includes
 #include "gen-types.h"
@@ -17,8 +17,9 @@
 //======================================================================================================================
 void num_init(void);
 void num_deinit(void);
-void num_statusWin(const uint16 xPos, const uint16 yPos);
-void num_exportDB(metricsType** const outputDB);
+void num_svi2(const uint16 xPos, const uint16 yPos);
+void num_load(const uint16 xPos, const uint16 yPos);
+void num_exportDB(metricsType** const outDB);
 
 //======================================================================================================================
 // END OF FILE

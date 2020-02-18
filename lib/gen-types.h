@@ -46,12 +46,14 @@
 #define F_CYN "\e[0;36m"
 #define F_WHT "\e[0;37m"
 
-#define HIDE_CURSOR  printf("\e[?25l")
-#define SHOW_CURSOR  printf("\e[?25h")
-#define CLEAR_SCREEN printf("\e[1;1H\e[2J")
+// terminal management
+#define CURSOR_HIDE     printf("\e[?25l")
+#define CURSOR_SHOW     printf("\e[?25h")
+#define CLEAR_SCREEN    printf("\e[1;1H\e[2J")
+#define TERM_NAME(name) printf("\033]0;%s\007", name)
 
-// colour print at given position
-#define PRINTL(xPos, yPos, ...) printf("\033[%d;%dH", yPos, xPos); printf(__VA_ARGS__)
+// jump cursor and print
+#define PRINTL(xPos, yPos, ...) printf("\033[%d;%dH", yPos, xPos); printf(__VA_ARGS__); printf("%s", F_RST);
 
 //======================================================================================================================
 // TYPES
@@ -76,6 +78,8 @@
 #define SINT32_MAX           2147483647
 #define SINT64_MAX  9223372036854775807
 
+#define B_TO_MB    1048576u // divide by this to transform bytes in megabytes
+
 // these data type sizes are based on my machine (3950X + Linux 64-bit; I use Arch btw)
 typedef unsigned         char   uint8; //                          0 ...                        255
 typedef unsigned short    int  uint16; //                          0 ...                     65.535
@@ -90,6 +94,7 @@ typedef   signed  long    int  sint64; //--9.223.372.036.854.775.808 ... +9.223.
 typedef                 float float32; //                   1.2E-38  ... 3.4E+38       (6 decimals)
 typedef                double float64; //                   2.3E-308 ... 1.7E+308     (15 decimals)
 
+typedef unsigned         char    bool; //                          0 ...                        255
 typedef enum statusTypeTag
 {
     OK,

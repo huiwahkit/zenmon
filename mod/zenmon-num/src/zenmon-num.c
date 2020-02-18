@@ -1,206 +1,44 @@
 // Copyright (C) 2020 Denis Isai
 
 //======================================================================================================================
-// INCLUSIONS
+// INCLUDES
 //======================================================================================================================
 // system includes
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
+// dependency includes
+#include "logging.h"
+
 // local includes
 #include "zenmon-cfg.h"
+#include "zenmon-num-svi2.h"
+#include "zenmon-num-load.h"
 #include "zenmon-num.h"
-
-//======================================================================================================================
-// DEFINES
-//======================================================================================================================
-#define CHECK_LIMIT(value, threshold, color) ((value >= threshold) ? color : F_RST)
 
 //======================================================================================================================
 // VARIABLES
 //======================================================================================================================
-static metricsType mDB;
+static metricsType mDB; // svi2 metrics database
+static sysLoadType sDB; // system usage database
 
 //======================================================================================================================
 // FUNCTIONS
 //======================================================================================================================
-static void num_printMetrics(const uint16 xPos, const uint16 yPos) //---------------------------------- num_printMetrics
+static bool num_openFile(FILE** FD, const sint8* const name)
 {
-    uint16 yIndex = yPos;
-
-    // minimum values; these are the only ones without warning colours
-    PRINTL(xPos + 11, yIndex++, "%s%4d", F_RST, mDB.vcpu.min);
-    PRINTL(xPos + 12, yIndex++, "%s%3d", F_RST, mDB.acpu.min);
-    PRINTL(xPos + 12, yIndex++, "%s%3d", F_RST, mDB.wcpu.min);
-
-    PRINTL(xPos + 11, yIndex++, "%s%4d", F_RST, mDB.vsoc.min);
-    PRINTL(xPos + 12, yIndex++, "%s%3d", F_RST, mDB.asoc.min);
-    PRINTL(xPos + 12, yIndex++, "%s%3d", F_RST, mDB.wsoc.min);
-
-    yIndex++;
-    PRINTL(xPos + 12, yIndex++, "%s%3d", F_RST, mDB.tdie.min);
-    PRINTL(xPos + 12, yIndex++, "%s%3d", F_RST, mDB.tctl.min);
-    PRINTL(xPos + 12, yIndex++, "%s%3d", F_RST, mDB.tcd1.min);
-    PRINTL(xPos + 12, yIndex++, "%s%3d", F_RST, mDB.tcd2.min);
-
-    // current values
-    yIndex = yPos;
-    PRINTL(xPos + 20, yIndex++, "%s%s%4d", F_RST, CHECK_LIMIT(mDB.vcpu.now, LIM_V, F_RED), mDB.vcpu.now);
-    PRINTL(xPos + 21, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.acpu.now, LIM_A, F_RED), mDB.acpu.now);
-    PRINTL(xPos + 21, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.wcpu.now, LIM_W, F_RED), mDB.wcpu.now);
-
-    PRINTL(xPos + 20, yIndex++, "%s%s%4d", F_RST, CHECK_LIMIT(mDB.vsoc.now, LIM_V, F_RED), mDB.vsoc.now);
-    PRINTL(xPos + 21, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.asoc.now, LIM_A, F_RED), mDB.asoc.now);
-    PRINTL(xPos + 21, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.wsoc.now, LIM_W, F_RED), mDB.wsoc.now);
-
-    yIndex++;
-    PRINTL(xPos + 21, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tdie.now, LIM_T, F_RED), mDB.tdie.now);
-    PRINTL(xPos + 21, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tctl.now, LIM_T, F_RED), mDB.tctl.now);
-    PRINTL(xPos + 21, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tcd1.now, LIM_T, F_RED), mDB.tcd1.now);
-    PRINTL(xPos + 21, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tcd2.now, LIM_T, F_RED), mDB.tcd2.now);
-
-    // maximum values
-    yIndex = yPos;
-    PRINTL(xPos + 29, yIndex++, "%s%s%4d", F_RST, CHECK_LIMIT(mDB.vcpu.max, LIM_V, F_YEL), mDB.vcpu.max);
-    PRINTL(xPos + 30, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.acpu.max, LIM_A, F_YEL), mDB.acpu.max);
-    PRINTL(xPos + 30, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.wcpu.max, LIM_W, F_YEL), mDB.wcpu.max);
-
-    PRINTL(xPos + 29, yIndex++, "%s%s%4d", F_RST, CHECK_LIMIT(mDB.vsoc.max, LIM_V, F_YEL), mDB.vsoc.max);
-    PRINTL(xPos + 30, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.asoc.max, LIM_A, F_YEL), mDB.asoc.max);
-    PRINTL(xPos + 30, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.wsoc.max, LIM_W, F_YEL), mDB.wsoc.max);
-
-    yIndex++;
-    PRINTL(xPos + 30, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tdie.max, LIM_T, F_YEL), mDB.tdie.max);
-    PRINTL(xPos + 30, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tctl.max, LIM_T, F_YEL), mDB.tctl.max);
-    PRINTL(xPos + 30, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tcd1.max, LIM_T, F_YEL), mDB.tcd1.max);
-    PRINTL(xPos + 30, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tcd2.max, LIM_T, F_YEL), mDB.tcd2.max);
-
-    // average values
-    yIndex = yPos;
-    PRINTL(xPos + 38, yIndex++, "%s%s%4d", F_RST, CHECK_LIMIT(mDB.vcpu.avg, LIM_V, F_RED), mDB.vcpu.avg);
-    PRINTL(xPos + 39, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.acpu.avg, LIM_A, F_RED), mDB.acpu.avg);
-    PRINTL(xPos + 39, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.wcpu.avg, LIM_W, F_RED), mDB.wcpu.avg);
-
-    PRINTL(xPos + 38, yIndex++, "%s%s%4d", F_RST, CHECK_LIMIT(mDB.vsoc.avg, LIM_V, F_RED), mDB.vsoc.avg);
-    PRINTL(xPos + 39, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.asoc.avg, LIM_A, F_RED), mDB.asoc.avg);
-    PRINTL(xPos + 39, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.wsoc.avg, LIM_W, F_RED), mDB.wsoc.avg);
-
-    yIndex++;
-    PRINTL(xPos + 39, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tdie.avg, LIM_T, F_RED), mDB.tdie.avg);
-    PRINTL(xPos + 39, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tctl.avg, LIM_T, F_RED), mDB.tctl.avg);
-    PRINTL(xPos + 39, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tcd1.avg, LIM_T, F_RED), mDB.tcd1.avg);
-    PRINTL(xPos + 39, yIndex++, "%s%s%3d", F_RST, CHECK_LIMIT(mDB.tcd2.avg, LIM_T, F_RED), mDB.tcd2.avg);
-}
-
-static sint32 num_readFile(FILE* const file) //------------------------------------------------------------ num_readFile
-{
-    sint8  fileString[10] = {0};
-    uint32 length;
-
-    fseek(file, 0, SEEK_END);
-    length = ftell (file);
-    fseek(file, 0, SEEK_SET);
-    fread(fileString, 1, length, file);
-
-    return atoi(fileString);
-}
-
-static void num_getStatus(void) //------------------------------------------------------------------------ num_getStatus
-{
-    // electrical
-    mDB.vcpu.now = num_readFile(mDB.vcpu.FD);                           // milivolts
-    mDB.acpu.now = num_readFile(mDB.acpu.FD); mDB.acpu.now /= 500u;     //     amperes; /2 to counter zenpower issue
-    mDB.wcpu.now = num_readFile(mDB.wcpu.FD); mDB.wcpu.now /= 500000u;  //     watts  ; /2 to counter zenpower issue
-
-    mDB.vsoc.now = num_readFile(mDB.vsoc.FD);                           // milivolts
-    mDB.asoc.now = num_readFile(mDB.asoc.FD); mDB.asoc.now /= 500u;     //     amperes; /2 to counter zenpower issue
-    mDB.wsoc.now = num_readFile(mDB.wsoc.FD); mDB.wsoc.now /= 500000u;  //     watts  ; /2 to counter zenpower issue
-
-    // temperature
-    mDB.tdie.now = num_readFile(mDB.tdie.FD); mDB.tdie.now /= 1000u;    //    °Celsius
-    mDB.tctl.now = num_readFile(mDB.tctl.FD); mDB.tctl.now /= 1000u;    //    °Celsius
-    mDB.tcd1.now = num_readFile(mDB.tcd1.FD); mDB.tcd1.now /= 1000u;    //    °Celsius
-    mDB.tcd2.now = num_readFile(mDB.tcd2.FD); mDB.tcd2.now /= 1000u;    //    °Celsius
-}
-
-static void num_metricMinMax(metricType* const type) //------------------------------------------------ num_metricMinMax
-{
-    if((*type).min > (*type).now)
+    if(-1 != access(name, F_OK))
     {
-        (*type).min = (*type).now;
+        *FD = fopen(name, "rb");
+        return FALSE;
     }
     else
     {
-        // value is higher than min
-    }
-
-    if((*type).now > (*type).max)
-    {
-        (*type).max = (*type).now;
-    }
-    else
-    {
-        // value is lower than max
-    }
-}
-
-static void num_setMinMax(void) //------------------------------------------------------------------------ num_setMinMax
-{
-    // electrical
-    num_metricMinMax(&(mDB.vcpu)); // milivolts
-    num_metricMinMax(&(mDB.acpu)); //     amperes
-    num_metricMinMax(&(mDB.wcpu)); //     watts
-
-    num_metricMinMax(&(mDB.vsoc)); // milivolts
-    num_metricMinMax(&(mDB.asoc)); //     amperes
-    num_metricMinMax(&(mDB.wsoc)); //     watts
-
-    // temperature
-    num_metricMinMax(&(mDB.tdie)); //    °Celsius
-    num_metricMinMax(&(mDB.tctl)); //    °Celsius
-    num_metricMinMax(&(mDB.tcd1)); //    °Celsius
-    num_metricMinMax(&(mDB.tcd2)); //    °Celsius
-}
-static void num_metricAvg(metricType* const metric) //---------------------------------------------------- num_metricAvg
-{
-    uint8 index;
-
-    (*metric).avg = 0;
-
-    for(index = LEN_GR_D_X - AVG_CYCLES; index < LEN_GR_D_X; index++)
-    {
-        (*metric).avg += (*metric).hst[index];
-    }
-
-    (*metric).avg /= AVG_CYCLES;
-}
-
-static void num_setAvg(void) //------------------------------------------------------------------------------ num_setAvg
-{
-    static uint8 waitCycles = 1u;
-
-    if(AVG_CYCLES < waitCycles) // wait 10 cycles
-    {
-        // electrical
-        num_metricAvg(&(mDB.vcpu)); // milivolts
-        num_metricAvg(&(mDB.acpu)); //     amperes
-        num_metricAvg(&(mDB.wcpu)); //     watts
-
-        num_metricAvg(&(mDB.vsoc)); // milivolts
-        num_metricAvg(&(mDB.asoc)); //     amperes
-        num_metricAvg(&(mDB.wsoc)); //     watts
-
-        // temperature
-        num_metricAvg(&(mDB.tdie)); //    °Celsius
-        num_metricAvg(&(mDB.tctl)); //    °Celsius
-        num_metricAvg(&(mDB.tcd1)); //    °Celsius
-        num_metricAvg(&(mDB.tcd2)); //    °Celsius
-    }
-    else
-    {
-        waitCycles++;
+        PRINT_FAIL("File %s%s%s not found", F_RED, name, F_RST);
+        return TRUE;
     }
 }
 
@@ -209,64 +47,94 @@ static void num_setAvg(void) //-------------------------------------------------
 //======================================================================================================================
 void num_init(void) //----------------------------------------------------------------------------------------- num_init
 {
+    bool failure = FALSE;
+
     // open file descriptors
-    mDB.vcpu.FD = fopen(FILE_VCPU, "rb");
-    mDB.acpu.FD = fopen(FILE_ACPU, "rb");
-    mDB.wcpu.FD = fopen(FILE_WCPU, "rb");
+    failure |= num_openFile(&(mDB.vcore.FD), FILE_VCORE);
+    failure |= num_openFile(&(mDB.acore.FD), FILE_ACORE);
+    failure |= num_openFile(&(mDB.wcore.FD), FILE_WCORE);
 
-    mDB.vsoc.FD = fopen(FILE_VSOC, "rb");
-    mDB.asoc.FD = fopen(FILE_ASOC, "rb");
-    mDB.wsoc.FD = fopen(FILE_WSOC, "rb");
+    failure |= num_openFile(&(mDB.vsoc.FD) , FILE_VSOC);
+    failure |= num_openFile(&(mDB.asoc.FD) , FILE_ASOC);
+    failure |= num_openFile(&(mDB.wsoc.FD) , FILE_WSOC);
 
-    mDB.tdie.FD = fopen(FILE_TDIE, "rb");
-    mDB.tctl.FD = fopen(FILE_TCTL, "rb");
-    mDB.tcd1.FD = fopen(FILE_TCD1, "rb");
-    mDB.tcd2.FD = fopen(FILE_TCD2, "rb");
+    failure |= num_openFile(&(mDB.cdie.FD) , FILE_CDIE);
+    failure |= num_openFile(&(mDB.cctl.FD) , FILE_CCTL);
+    failure |= num_openFile(&(mDB.cccd0.FD), FILE_CCCD0);
+    failure |= num_openFile(&(mDB.cccd1.FD), FILE_CCCD1);
+
+    failure |= num_openFile(&(sDB.mhzFD)   , FILE_MHZ);
+    failure |= num_openFile(&(sDB.usgFD)   , FILE_USG);
+    failure |= num_openFile(&(sDB.memFD)   , FILE_MEM);
+
+    if(FALSE != failure) // if any files don't exist then exit program
+    {
+        num_deinit();
+        CURSOR_SHOW;
+        PRINT_FAIL("Required files not found; exiting...");
+        exit(EXIT_FAILURE);
+    }
 
     // reset min value
-    mDB.vcpu.min = UINT32_MAX;
-    mDB.acpu.min = UINT32_MAX;
-    mDB.wcpu.min = UINT32_MAX;
+    mDB.vcore.min = UINT32_MAX;
+    mDB.acore.min = UINT32_MAX;
+    mDB.wcore.min = UINT32_MAX;
 
-    mDB.vsoc.min = UINT32_MAX;
-    mDB.asoc.min = UINT32_MAX;
-    mDB.wsoc.min = UINT32_MAX;
+    mDB.vsoc.min  = UINT32_MAX;
+    mDB.asoc.min  = UINT32_MAX;
+    mDB.wsoc.min  = UINT32_MAX;
 
-    mDB.tdie.min = UINT32_MAX;
-    mDB.tctl.min = UINT32_MAX;
-    mDB.tcd1.min = UINT32_MAX;
-    mDB.tcd2.min = UINT32_MAX;
+    mDB.cdie.min  = UINT32_MAX;
+    mDB.cctl.min  = UINT32_MAX;
+    mDB.cccd0.min = UINT32_MAX;
+    mDB.cccd1.min = UINT32_MAX;
+
+    // point the sub-modules to the databases
+    svi2_init(&mDB);
+    load_init(&sDB);
 }
 
 void num_deinit(void) //------------------------------------------------------------------------------------- num_deinit
 {
     // close file descriptors; technically the OS does this by itself, but it doesn't hurt doing it here
-    fclose(mDB.vcpu.FD);
-    fclose(mDB.acpu.FD);
-    fclose(mDB.wcpu.FD);
+    if(NULL != mDB.vcore.FD) fclose(mDB.vcore.FD);
+    if(NULL != mDB.acore.FD) fclose(mDB.acore.FD);
+    if(NULL != mDB.wcore.FD) fclose(mDB.wcore.FD);
 
-    fclose(mDB.vsoc.FD);
-    fclose(mDB.asoc.FD);
-    fclose(mDB.wsoc.FD);
+    if(NULL != mDB.vsoc.FD ) fclose(mDB.vsoc.FD);
+    if(NULL != mDB.asoc.FD ) fclose(mDB.asoc.FD);
+    if(NULL != mDB.wsoc.FD ) fclose(mDB.wsoc.FD);
 
-    fclose(mDB.tdie.FD);
-    fclose(mDB.tctl.FD);
-    fclose(mDB.tcd1.FD);
-    fclose(mDB.tcd2.FD);
+    if(NULL != mDB.cdie.FD ) fclose(mDB.cdie.FD);
+    if(NULL != mDB.cctl.FD ) fclose(mDB.cctl.FD);
+    if(NULL != mDB.cccd0.FD) fclose(mDB.cccd0.FD);
+    if(NULL != mDB.cccd1.FD) fclose(mDB.cccd1.FD);
+
+    if(NULL != sDB.mhzFD   ) fclose(sDB.mhzFD);
+    if(NULL != sDB.usgFD   ) fclose(sDB.usgFD);
+    if(NULL != sDB.memFD   ) fclose(sDB.memFD);
 }
 
-void num_statusWin(const uint16 xPos, const uint16 yPos) //------------------------------------------------ dot_eStatWin
+void num_svi2(const uint16 xPos, const uint16 yPos) //--------------------------------------------------------- num_svi2
 {
-    num_getStatus();
-    num_setMinMax();
-    num_setAvg();
-    num_printMetrics(xPos, yPos + 2u);
+    // fill the window elements
+    svi2_getStatus();
+    svi2_setMinMax();
+    svi2_setAvg();
+    svi2_printMetrics(xPos, yPos + 2u);
 }
 
-void num_exportDB(metricsType** const outputDB) //--------------------------------------------------------- num_exportDB
+void num_load(const uint16 xPos, const uint16 yPos) //--------------------------------------------------------- num_load
 {
-    // let the dot drawing functions access the metrics database
-    *outputDB = &mDB;
+    // fill the window elements
+    load_sysInfo(xPos + 2u, yPos +  1u);
+    load_memBar( xPos + 2u, yPos +  7u);
+    load_cpuBar( xPos + 2u, yPos + 11u);
+}
+
+void num_exportDB(metricsType** const outDB) //------------------------------------------------------------ num_exportDB
+{
+    *outDB = &mDB; // let the dot drawing functions access the metrics database
 }
 
 //======================================================================================================================

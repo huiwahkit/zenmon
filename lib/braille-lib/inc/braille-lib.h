@@ -6,7 +6,7 @@
 #define BRAILLE_LIB_H
 
 //======================================================================================================================
-// INCLUSIONS
+// INCLUDES
 //======================================================================================================================
 // system includes
 #include <stdio.h>
@@ -62,8 +62,8 @@ static enum brailleBitsEnumTypeTag
 // API
 //======================================================================================================================
 void braille_init(const uint8 width);
-void braille_dot( uint8* const gBuff, const uint16 xPos , const uint16 yPos);
-void braille_line(uint8* const gBuff,       uint16 xPos1,       uint16 yPos1, const uint16 xPos2, const uint16 yPos2);
+void braille_dot( uint8* const graph, const uint16 xPos , const uint16 yPos);
+void braille_line(uint8* const graph,       uint16 xPos1,       uint16 yPos1, const uint16 xPos2, const uint16 yPos2);
 
 //======================================================================================================================
 // END OF FILE
