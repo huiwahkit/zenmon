@@ -7,7 +7,7 @@
 * CPU usage for the past 1, 5 and 15 minutes
 * RAM usage
 * CPU thread usage
-* CPU core mHz
+* CPU core MHz
 
 This started as a personal project after I was left unsatisfied with the tools available for monitoring voltages and temperatures on the Ryzen 3000 CPUs.
 
@@ -23,9 +23,10 @@ At this point I would consider it feature-complete. I will certainly maintain/im
 
 * This preview is running at 100ms/sample
 * For the display I use centivolts instead of millivolts for better text alignment; in the code they are millivolts, and the variables associated with them are as named as volts
-* The labeling for the usage and mHz bars are a bit messy, but that's the best way I have found to make them work
+* The labeling for the usage and MHz bars are a bit messy, but that's the best way I have found to make them work
 * The RAM usage bar is there, and it gets red at 50% load; it's just that rendering in Blender to get the other stats to rise and fall doesn't use that much RAM to get that bar going
 * For each Braille graph, the scales, value of each dot and the point at which is turns red can be found in the `cfg` directory. By default they are set to something reasonable, that also works well with the limitations imposed by working with 2x4 "pixels" Braille characters.
+* The minimum frequency that I get with my setup is 2.2 GHz; this is the reason the frequency bars stay high
 
 ---
 ### Buliding
@@ -60,7 +61,7 @@ At this point I would consider it feature-complete. I will certainly maintain/im
 * The only Ryzen CPU I have access to is my 3950X, so this is what I can test it on
 
 #### Modifications needed for unsupported CPUs
-* In case of the 3900X, the mHz and usage bars for the last 4 cores will contain invalid values; otherwise it works as intended. The core/thread config can be changed in `zenmon-cfg-load.h` and the windows can be re-structured in `zenmon-num-load.c`
+* In case of the 3900X, the MHz and usage bars for the last 4 cores will contain invalid values; otherwise it works as intended. The core/thread config can be changed in `zenmon-cfg-load.h` and the windows can be re-structured in `zenmon-num-load.c`
 * For other CPUs:
     * remove (or add if you have a Threadripper supported by `zenpower`) the extra file(s) handling
     * the `cfg` directory and `zenmon-types.h` are good starting points; go top-down from there; I am talking about defines (especially for the system files from where I acquire various data) and structure members
@@ -80,10 +81,7 @@ Just call it from the newly-created `out` directory and it will run with a sampl
 
 ---
 ### Issues
-* The terminal window stays renamed to `zenmon` even after exiting the program; from what I understand, the way the terminal is named varies from one terminal emulator to another (`$TERM`, for example, is useless for `Alacritty`)
-* I very rarely get a floating point exception while running:
-    * I have not been able to pinpoint its cause, as it's not occuring after a fixed amount of time
-    * I have gone through all divisions done in the main while loop and have not found anything that might cause this reliably; It might be caused by an error to read something from the system files (such as the total memory)
+* The terminal window stays renamed to `zenmon` even after exiting the program; I would need to save the current name before changing it, but from what I understand, the way a terminal is named varies from one terminal emulator to another (`$TERM`, for example, is useless for `Alacritty`)
 
 ---
 ### Limitations
@@ -98,6 +96,7 @@ I might get to these at some point:
     * this pauses the entire program, including the monitoring, not just the display of data
     * when you resize the terminal and content is printed again, the all values will continue from where they stopped
     * this is because data monitoring is not entirely separate from data printing
+    * I am actually already working on this one; no ETA
 
 The next are all intentional, mostly because of the `KISS principle` (_and because I am lazy..._ but seriously, I did try to keep things as simple as possible; I guess you will be the judge of that):
 * Average values calculations start after 10 samples; until then they are 0

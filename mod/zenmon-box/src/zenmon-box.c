@@ -3,6 +3,10 @@
 //======================================================================================================================
 // INCLUDES
 //======================================================================================================================
+// system includes
+#include <stdio.h>
+#include <sys/utsname.h>
+
 // dependency includes
 #include "braille-lib.h"
 
@@ -47,7 +51,7 @@ void box_svi2(const sint8* title, uint16 xPos, uint16 yPos, const sint8* colour)
     xPos += 2u;
     PRINTL(xPos, yPos++, " %s ", title);
 
-    // print labels
+    // static labels
     PRINTL(xPos, yPos++, "%s Sensor     Min      Val      Max      Avg", F_BLD);
     PRINTL(xPos, yPos++, "cV·Core");
     PRINTL(xPos, yPos++, " A·Core");
@@ -64,8 +68,30 @@ void box_svi2(const sint8* title, uint16 xPos, uint16 yPos, const sint8* colour)
 
 void box_load(const sint8* title, uint16 const xPos, uint16 const yPos, const sint8* colour) //---------------- box_load
 {
+    struct utsname osInfo;
+
+    uname(&osInfo); // get the kernel name and release
+
     box_draw(xPos, yPos, LEN_LOAD_W_X, LEN_LOAD_W_Y, colour);
-    PRINTL(xPos + 2u, yPos, " %s ", title);
+    PRINTL(xPos +  2u, yPos      , " %s ", title);
+
+    // static labels for sysinfo
+    PRINTL(xPos +  2u, yPos  + 1u, "─────────────────── %sSYS%s ───────────────────", F_BLD, F_RST);
+    PRINTL(xPos +  5u, yPos  + 2u,    "%sKernel%s: %s %s", F_BLD, F_RST , osInfo.sysname, osInfo.release);
+    PRINTL(xPos +  5u, yPos  + 3u,    "%sUptime%s:"      , F_BLD, F_RST);
+    PRINTL(xPos +  2u, yPos  + 4u, "%sProcesses%s:"      , F_BLD, F_RST);
+    PRINTL(xPos +  7u, yPos  + 5u,      "%sLoad%s:"      , F_BLD, F_RST);
+
+    // static labels for meminfo
+    PRINTL(xPos +  2u, yPos  + 7u, "─────────────────── %sRAM%s ───────────────────", F_BLD, F_RST);
+
+    // static labels for cpuinfo
+    PRINTL(xPos +  2u, yPos + 11u, "─────────────────── %sCPU%s ───────────────────", F_BLD, F_RST);
+    PRINTL(xPos + 22u, yPos + 16u,                       "usg");
+    PRINTL(xPos +  2u, yPos + 17u,   "CCD0-CCX0 CCD0-CCX1     CCD1-CCX2 CCD1-CCX3");
+
+    PRINTL(xPos + 22u, yPos + 22u,                       "MHz");
+    PRINTL(xPos +  2u, yPos + 23u,   "CCD0-CCX0 CCD0-CCX1     CCD1-CCX2 CCD1-CCX3");
 }
 
 void box_eGraph(const sint8* title, uint16 const xPos, uint16 const yPos, const sint8* colour) //------------ box_eGraph

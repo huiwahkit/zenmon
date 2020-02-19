@@ -129,6 +129,7 @@ void svi2_setAvg(void) //-------------------------------------------------------
 
 void svi2_printMetrics(uint16 xPos, const uint16 yPos) //--------------------------------------------- svi2_printMetrics
 {
+    // these positions depend on where static labels are printed in zenmon-box.c
     // temperatures can only go as high as 95, but they are displayed as 3-digit numbers for better printf alignment
 
     uint16 yIndex = yPos;
@@ -150,8 +151,8 @@ void svi2_printMetrics(uint16 xPos, const uint16 yPos) //-----------------------
     PRINTL(xPos, yIndex++, "%3d", (*mDB).cccd1.min);
 
     // current values
-    xPos += 9u;
-    yIndex = yPos;
+    xPos   += 9u;
+    yIndex  = yPos;
     PRINTL(xPos, yIndex++, "%s%3d", CHK_LIM((*mDB).vcore.now, LIM_V, F_RED), (*mDB).vcore.now / 10u); // mV to cV
     PRINTL(xPos, yIndex++, "%s%3d", CHK_LIM((*mDB).acore.now, LIM_A, F_RED), (*mDB).acore.now);
     PRINTL(xPos, yIndex++, "%s%3d", CHK_LIM((*mDB).wcore.now, LIM_W, F_RED), (*mDB).wcore.now);
@@ -167,8 +168,8 @@ void svi2_printMetrics(uint16 xPos, const uint16 yPos) //-----------------------
     PRINTL(xPos, yIndex++, "%s%3d", CHK_LIM((*mDB).cccd1.now, LIM_C, F_RED), (*mDB).cccd1.now);
 
     // maximum values
-    xPos += 9u;
-    yIndex = yPos;
+    xPos   += 9u;
+    yIndex  = yPos;
     PRINTL(xPos, yIndex++, "%s%3d", CHK_LIM((*mDB).vcore.max, LIM_V, F_YEL), (*mDB).vcore.max / 10u); // mV to cV
     PRINTL(xPos, yIndex++, "%s%3d", CHK_LIM((*mDB).acore.max, LIM_A, F_YEL), (*mDB).acore.max);
     PRINTL(xPos, yIndex++, "%s%3d", CHK_LIM((*mDB).wcore.max, LIM_W, F_YEL), (*mDB).wcore.max);
@@ -184,8 +185,8 @@ void svi2_printMetrics(uint16 xPos, const uint16 yPos) //-----------------------
     PRINTL(xPos, yIndex++, "%s%3d", CHK_LIM((*mDB).cccd1.max, LIM_C, F_YEL), (*mDB).cccd1.max);
 
     // average values
-    xPos += 9u;
-    yIndex = yPos;
+    xPos   += 9u;
+    yIndex  = yPos;
     PRINTL(xPos, yIndex++, "%s%3d", CHK_LIM((*mDB).vcore.avg, LIM_V, F_RED), (*mDB).vcore.avg / 10u); // mV to cV
     PRINTL(xPos, yIndex++, "%s%3d", CHK_LIM((*mDB).acore.avg, LIM_A, F_RED), (*mDB).acore.avg);
     PRINTL(xPos, yIndex++, "%s%3d", CHK_LIM((*mDB).wcore.avg, LIM_W, F_RED), (*mDB).wcore.avg);

@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/sysinfo.h>
-#include <sys/utsname.h>
 
 // dependency includes
 #include "gen-types.h"
@@ -22,7 +21,9 @@
 //======================================================================================================================
 // VARIABLES
 //======================================================================================================================
-static sysLoadType* sDB; // system usage database
+static sysLoadType* sDB;          // system usage database
+static uint8*       ramUsgFormat; // used to keep the "used/total" string centered
+static uint8        ramUsgOffset; // used to keep the "used/total" string centered
 
 //======================================================================================================================
 // FUNCTIONS
@@ -32,29 +33,39 @@ static void load_getMemUsg() //-------------------------------------------------
     uint8  line[LEN_LINE];
     uint32 freeMem = 0u;
 
+    static bool checkedOnce = FALSE;
+
     fseek((*sDB).memFD, 0, SEEK_SET);
     while(NULL != fgets(line, LEN_LINE, (*sDB).memFD))
     {
         // this if is VERY barbaric, but it's MUCH faster than strstr
-        if(('T' == line[3]) && ('o' == line[4])) // pattern found: "MemTotal"
+        if(('F' == line[3]) && ('r' == line[4])) // found "MemFree"
         {
-            (*sDB).memAll = (atoi(line + MEM_TOTAL_OFFSET) / 1000u); // mB
+            freeMem = ((atoi(line + MEM_AVAIL_OFFSET) / 1000u)); // MB
             continue;
         }
-        else if(('F' == line[3]) && ('r' == line[4])) // pattern found: "MemFree"
+        else if(('f' == line[2]) && ('f' == line[3])) // found "Buffers"
         {
-            freeMem = ((atoi(line + MEM_AVAIL_OFFSET) / 1000u)); // mB
+            freeMem += ((atoi(line + MEM_AVAIL_OFFSET) / 1000u)); // MB
             continue;
         }
-        else if(('f' == line[2]) && ('f' == line[3])) // pattern found: "Buffers"
+        else if(('C' == line[0]) && ('a' == line[1])) // found "Cached"
         {
-            freeMem += ((atoi(line + MEM_AVAIL_OFFSET) / 1000u)); // mB
+            freeMem += ((atoi(line + MEM_AVAIL_OFFSET) / 1000u)); // MB
             continue;
         }
-        else if(('C' == line[0]) && ('a' == line[1])) // pattern found: "Cached"
+        else if((FALSE == checkedOnce) && ('m' == line[2]) && ('T' == line[3]) && ('o' == line[4])) // found "MemTotal"
         {
-            freeMem += ((atoi(line + MEM_AVAIL_OFFSET) / 1000u)); // mB
-            //break; // todo: using break here stops memory updates and I cannot figure out why
+            (*sDB).memAll = (atoi(line + MEM_TOTAL_OFFSET) / 1000u); // MB; this value is only acquired once
+
+            // keep the "used/total" string centered
+                 if(1000u    > (*sDB).memAll) { ramUsgOffset = 18u; ramUsgFormat = "%3u/%3u"; }
+            else if(10000u   > (*sDB).memAll) { ramUsgOffset = 17u; ramUsgFormat = "%4u/%4u"; }
+            else if(100000u  > (*sDB).memAll) { ramUsgOffset = 16u; ramUsgFormat = "%5u/%5u"; }
+            else if(1000000u > (*sDB).memAll) { ramUsgOffset = 15u; ramUsgFormat = "%6u/%6u"; }
+            else                              { ramUsgOffset =  7u; ramUsgFormat = "your amount of RAM is extreme"; };
+
+            checkedOnce = TRUE; // never reachable again after this
         }
         else;
     }
@@ -121,7 +132,7 @@ static void load_getCpuMhz(void) //---------------------------------------------
         {
             if(CPU_CORES <= index)
             {
-                break; // exit after the physical cores' mHz have been found; the rest are virtual
+                break; // exit after the physical cores' MHz have been found; the rest are virtual
             }
             else
             {
@@ -192,7 +203,7 @@ static void load_printCpuUsg(uint16 xPos, uint16 yPos, const cpuUsgType* array, 
 static void load_printCpuMhz(uint16 xPos, uint16 yPos, const uint16* array, const uint8 start, const uint8 end) // load_printCpuMhz
 {
     uint8     boxes; // boxes to fill
-    uint16   segMhz; // mHz to display with segments
+    uint16   segMhz; // MHz to display with segments
     sint8*   colour;
     uint8  barIndex;
     uint8  cpuIndex;
@@ -253,7 +264,7 @@ static void load_printCpuMhz(uint16 xPos, uint16 yPos, const uint16* array, cons
                                                        continue; }
                 else; // unreachable
             }
-            else // clear the rest of the boxes in case mHz go down
+            else // clear the rest of the boxes in case MHz go down
             {
                 PRINTL(xPos     , yPos - barIndex, "%s ", colour);
                 PRINTL(xPos + 1u, yPos - barIndex, "%s ", colour);
@@ -274,26 +285,25 @@ void load_init(sysLoadType* const inDB) //--------------------------------------
 
 void load_sysInfo(const uint16 xPos, const uint16 yPos) //------------------------------------------------- load_sysInfo
 {
+    // these positions depend on where static labels are printed in zenmon-box.c
+
     struct sysinfo sysInfo;
-    struct utsname  osInfo;
 
     sysinfo(&sysInfo); // get updated values for uptime, processes and load
-    uname(&osInfo);    // get the kernel release; todo: this should only really be called once at startup
 
-    PRINTL(xPos, yPos     , "─────────────────── %sSYS%s ───────────────────", F_BLD, F_RST);
-    PRINTL(xPos, yPos + 1u, "   %sKernel%s: %s"               , F_BLD, F_RST , osInfo.release);
-    PRINTL(xPos, yPos + 2u, "   %sUptime%s: %02ld:%02ld:%02ld", F_BLD, F_RST , sysInfo.uptime / 3600u    , \
-                                                                               sysInfo.uptime / 60u % 60u, \
-                                                                               sysInfo.uptime       % 60u);
-    PRINTL(xPos, yPos + 3u, "%sProcesses%s: %u   "                           , F_BLD, F_RST, sysInfo.procs);
-    PRINTL(xPos, yPos + 4u, "     %sLoad%s: %2.2f %2.2f %2.2f", F_BLD, F_RST , \
-                            sysInfo.loads[0] / ((float)(1u << SI_LOAD_SHIFT)), \
-                            sysInfo.loads[1] / ((float)(1u << SI_LOAD_SHIFT)), \
-                            sysInfo.loads[2] / ((float)(1u << SI_LOAD_SHIFT)));
+    PRINTL(xPos + 11u, yPos + 2u, "%02ld:%02ld:%02ld", sysInfo.uptime / 3600u    , \
+                                                       sysInfo.uptime / 60u % 60u, \
+                                                       sysInfo.uptime       % 60u);
+    PRINTL(xPos + 11u, yPos + 3u, "%u"               , sysInfo.procs);
+    PRINTL(xPos + 11u, yPos + 4u, "%2.2f %2.2f %2.2f", sysInfo.loads[0] / ((float)(1u << SI_LOAD_SHIFT)), \
+                                                       sysInfo.loads[1] / ((float)(1u << SI_LOAD_SHIFT)), \
+                                                       sysInfo.loads[2] / ((float)(1u << SI_LOAD_SHIFT)));
 }
 
 void load_memBar(const uint16 xPos, const uint16 yPos) //--------------------------------------------------- load_memBar
 {
+    // these positions depend on where static labels are printed in zenmon-box.c
+
     load_getMemUsg(); // call this first to avoid div/0
 
     // RAM transformed in usage bar characters
@@ -302,12 +312,11 @@ void load_memBar(const uint16 xPos, const uint16 yPos) //-----------------------
     const uint16     yBar = yPos + 2u;                   // start printing from the 2nd X coord
 
     uint8     boxes = (*sDB).memUsg / mbPerBox; // boxes to fill
-    uint16    segMB = (*sDB).memUsg % mbPerBox; // mB to display with segments
+    uint16    segMB = (*sDB).memUsg % mbPerBox; // MB to display with segments
     sint8*   colour = F_RST;
     uint8  boxIndex;
 
-    PRINTL(xPos      , yPos     , "─────────────────── %sRAM%s ───────────────────", F_BLD, F_RST);
-    PRINTL(xPos + 16u, yPos + 1u, "%5u/%5u"                                        , (*sDB).memUsg, (*sDB).memAll);
+    PRINTL(xPos + ramUsgOffset, yPos + 1u, ramUsgFormat, (*sDB).memUsg, (*sDB).memAll); // print "used/total"
 
     if((0u == boxes) && (mbPerSeg > segMB)) segMB = mbPerSeg; // make sure no bar is invisible
 
@@ -341,18 +350,13 @@ void load_memBar(const uint16 xPos, const uint16 yPos) //-----------------------
 
 void load_cpuBar(const uint16 xPos, const uint16 yPos) //--------------------------------------------------- load_cpuBar
 {
+    // these positions depend on where static labels are printed in zenmon-box.c
+
     const uint16 yUsg = yPos + 1u;
     const uint16 yMhz = yPos + 7u;
 
     load_getCpuUsg();
     load_getCpuMhz();
-
-    PRINTL(xPos      , yPos      , "─────────────────── %sCPU%s ───────────────────", F_BLD, F_RST);
-    PRINTL(xPos + 20u, yPos +  5u, "usg");
-    PRINTL(xPos      , yPos +  6u, "CCD0-CCX0 CCD0-CCX1     CCD1-CCX2 CCD1-CCX3");
-
-    PRINTL(xPos + 20u, yPos + 11u, "mhz");
-    PRINTL(xPos      , yPos + 12u, "CCD0-CCX0 CCD0-CCX1     CCD1-CCX2 CCD1-CCX3");
 
     // print usage bars for CCD0
     load_printCpuUsg(xPos      , yUsg, (*sDB).cpuUsg,  0u,  3u); // print usg bars for 4 threads
@@ -366,17 +370,17 @@ void load_cpuBar(const uint16 xPos, const uint16 yPos) //-----------------------
     load_printCpuUsg(xPos + 34u, yUsg, (*sDB).cpuUsg, 24u, 27u); // print usg bars for 4 threads
     load_printCpuUsg(xPos + 39u, yUsg, (*sDB).cpuUsg, 28u, 31u); // print usg bars for 4 threads
 
-    // print mHz bars for CCD0
-    load_printCpuMhz(xPos      , yMhz, (*sDB).cpuMhz,  0u,  1u); // print mHz bars for 2 cores
-    load_printCpuMhz(xPos +  5u, yMhz, (*sDB).cpuMhz,  2u,  3u); // print mHz bars for 2 cores
-    load_printCpuMhz(xPos + 10u, yMhz, (*sDB).cpuMhz,  4u,  5u); // print mHz bars for 2 cores
-    load_printCpuMhz(xPos + 15u, yMhz, (*sDB).cpuMhz,  6u,  7u); // print mHz bars for 2 cores
+    // print MHz bars for CCD0
+    load_printCpuMhz(xPos      , yMhz, (*sDB).cpuMhz,  0u,  1u); // print MHz bars for 2 cores
+    load_printCpuMhz(xPos +  5u, yMhz, (*sDB).cpuMhz,  2u,  3u); // print MHz bars for 2 cores
+    load_printCpuMhz(xPos + 10u, yMhz, (*sDB).cpuMhz,  4u,  5u); // print MHz bars for 2 cores
+    load_printCpuMhz(xPos + 15u, yMhz, (*sDB).cpuMhz,  6u,  7u); // print MHz bars for 2 cores
 
-    // print mHz bars for CCD0
-    load_printCpuMhz(xPos + 24u, yMhz, (*sDB).cpuMhz,  8u,  9u); // print mHz bars for 2 cores
-    load_printCpuMhz(xPos + 29u, yMhz, (*sDB).cpuMhz, 10u, 11u); // print mHz bars for 2 cores
-    load_printCpuMhz(xPos + 34u, yMhz, (*sDB).cpuMhz, 12u, 13u); // print mHz bars for 2 cores
-    load_printCpuMhz(xPos + 39u, yMhz, (*sDB).cpuMhz, 14u, 15u); // print mHz bars for 2 cores
+    // print MHz bars for CCD0
+    load_printCpuMhz(xPos + 24u, yMhz, (*sDB).cpuMhz,  8u,  9u); // print MHz bars for 2 cores
+    load_printCpuMhz(xPos + 29u, yMhz, (*sDB).cpuMhz, 10u, 11u); // print MHz bars for 2 cores
+    load_printCpuMhz(xPos + 34u, yMhz, (*sDB).cpuMhz, 12u, 13u); // print MHz bars for 2 cores
+    load_printCpuMhz(xPos + 39u, yMhz, (*sDB).cpuMhz, 14u, 15u); // print MHz bars for 2 cores
 }
 
 //======================================================================================================================

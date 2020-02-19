@@ -32,13 +32,13 @@
 #define MEM_AVAIL_OFFSET  13u                 // characters to skip when reading the available memory line
 #define MEM_TOTAL_OFFSET  9u                  // characters to skip when reading the total memory line
 
-// core mHz bars config
-#define MHZ_CPU_MAX       5000u               // max value of the mhz bar
+// core MHz bars config
+#define MHZ_CPU_MAX       5000u               // max value of the MHz bar
 #define MHZ_BAR_LEN       5u                  // bar height in lines
-#define MHZ_BAR_LIM       4u                  // bar turns red at 80% mHz of MAX
+#define MHZ_BAR_LIM       4u                  // bar turns red at 80% MHz of MAX
 #define MHZ_PER_BOX       1000u               // (MHZ_CPU_MAX / MHZ_BAR_LEN)
 #define MHZ_PER_SEG       125u                // (MHZ_PER_BOX / SUBBARS_PER_BOX)
-#define MHZ_OFFSET        10u                 // characters to skip when reading the mHz line
+#define MHZ_OFFSET        10u                 // characters to skip when reading the MHz line
 
 // thread usage bars config; permille instead of percent is used because of high bar granularity
 #define USG_CPU_MAX       1000u               // used for the usg bar
