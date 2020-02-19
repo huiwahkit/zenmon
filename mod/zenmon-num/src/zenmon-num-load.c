@@ -78,8 +78,9 @@ static void load_getCpuUsg(void) //---------------------------------------------
     // for the 1st iteration of usage calculation, the values will be since boot (since past sum and idle are 0)
 
     uint8  line[LEN_LINE];
-    uint8  lineIndex  = 0u;
-    uint8  tokenIndex = 0u;
+    uint8  lineIndex   = 0u; // go through the lines  in the file
+    uint8  tokenIndex  = 0u; // go through the tokens in the line
+    uint8  threadIndex = 0u; // arrange the threads properly to match their core
     uint8* token;
     uint32 sum;  // total OS ticks
     uint32 idle; //  idle OS ticks
@@ -109,13 +110,26 @@ static void load_getCpuUsg(void) //---------------------------------------------
             }
         }
 
+        // the first half of the threads are physical cores; the rest are virtual cores (on SMT CPUs)
+        // normally this is fine, but when displaying the usg, each core is associated with its 2 threads
+        // this association is not perfect: there is a delay between getting the usg and the MHz
+        // these values are adjusted VERY VERY fast by the CPU, so high usg won't always mean high MHz when displaying
+        if(CPU_CORES > lineIndex) // these are the physical cores (0-15 on my machine)
+        {
+            threadIndex = lineIndex * 2u; // select even indexes
+        }
+        else // these are the virtual cores (16-31 on my machine); on CPUs without SMT this is unreachable
+        {
+            threadIndex = (lineIndex * 2u) - CPU_THREADS + 1u; // select odd indexes
+        }
+
         // save the cpu thread usage permille for the current cycle
-        (*sDB).cpuUsg[lineIndex].idle = 1000u - ((idle - (*sDB).cpuUsg[lineIndex].lastIdle) * 1000u / \
-                                                 (sum  - (*sDB).cpuUsg[lineIndex].lastSum));
+        (*sDB).cpuUsg[threadIndex].idle = 1000u - ((idle - (*sDB).cpuUsg[threadIndex].lastIdle) * 1000u / \
+                                                   (sum  - (*sDB).cpuUsg[threadIndex].lastSum));
 
         // save the current values for the next cycle
-        (*sDB).cpuUsg[lineIndex].lastSum  = sum;
-        (*sDB).cpuUsg[lineIndex].lastIdle = idle;
+        (*sDB).cpuUsg[threadIndex].lastSum  = sum;
+        (*sDB).cpuUsg[threadIndex].lastIdle = idle;
     }
 }
 
@@ -130,9 +144,10 @@ static void load_getCpuMhz(void) //---------------------------------------------
         // this if is VERY barbaric, but it's MUCH faster than strstr
         if((' ' == line[3]) && ('M' == line[4])) // pattern found: "cpu Mhz"
         {
+            // the first half of the threads are physical cores; the rest are virtual cores (on SMT CPUs)
             if(CPU_CORES <= index)
             {
-                break; // exit after the physical cores' MHz have been found; the rest are virtual
+                break; // exit after the physical cores' MHz have been found
             }
             else
             {
