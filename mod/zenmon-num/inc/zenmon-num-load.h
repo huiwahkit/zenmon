@@ -18,10 +18,16 @@
 //======================================================================================================================
 // API
 //======================================================================================================================
+// management
 void load_init(sysLoadType* const inDB);
-void load_sysInfo(const uint16 xPos, const uint16 yPos);
-void load_memBar( const uint16 xPos, const uint16 yPos);
-void load_cpuBar( const uint16 xPos, const uint16 yPos);
+
+// getters; sysInfo and RAM do not need getters because their data does not depend on the previous polling cycle
+void load_getCpuBar(void);
+
+// printers
+void load_printSysInfo(const uint16 xPos, const uint16 yPos);
+void load_printRamBar( const uint16 xPos, const uint16 yPos);
+void load_printCpuBar( const uint16 xPos, const uint16 yPos);
 
 //======================================================================================================================
 // END OF FILE

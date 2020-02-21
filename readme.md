@@ -92,11 +92,6 @@ I might get to these at some point:
     * `tmpfs` usage is not taken into account
     * I did not get the memory info from `sysinfo` because it has no data on cached RAM
     * other monitoring tools might report slightly different values, but still relatively close
-* If your terminal window is too small for the content, you will be notified to resize it, but:
-    * this pauses the entire program, including the monitoring, not just the display of data
-    * when you resize the terminal and content is printed again, the all values will continue from where they stopped
-    * this is because data monitoring is not entirely separate from data printing
-    * I am actually already working on this one; no ETA
 
 The next are all intentional, mostly because of the `KISS principle` (_and because I am lazy..._ but seriously, I did try to keep things as simple as possible; I guess you will be the judge of that):
 * Average values calculations start after 10 samples; until then they are 0

@@ -127,9 +127,10 @@ void svi2_setAvg(void) //-------------------------------------------------------
     }
 }
 
-void svi2_printMetrics(uint16 xPos, const uint16 yPos) //--------------------------------------------- svi2_printMetrics
+void svi2_printTable(uint16 xPos, const uint16 yPos) //------------------------------------------------- svi2_printTable
 {
-    // these positions depend on where static labels are printed in zenmon-box.c
+    // these hardcoded positions depend on where the static labels are printed in zenmon-box.c
+
     // temperatures can only go as high as 95, but they are displayed as 3-digit numbers for better printf alignment
 
     uint16 yIndex = yPos;

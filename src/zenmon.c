@@ -27,8 +27,8 @@
 // DEFINES
 //======================================================================================================================
 #define VERSION_MAJOR 1
-#define VERSION_MINOR 0
-#define VERSION_PATCH 1
+#define VERSION_MINOR 1
+#define VERSION_PATCH 0
 
 #define UNTIL_SIGNAL 1
 
@@ -133,9 +133,9 @@ int main(int argc, char* const argv[]) //---------------------------------------
     struct winsize nowTerm;
 
     // set window coordinates
-    const coordType svi2Pos   = {4u , 2u };
-    const coordType loadPos   = {4u , 16u};
-    const coordType eGraphPos = {51u, 2u };
+    const coordType svi2Pos   = { 4u,  2u};
+    const coordType loadPos   = { 4u, 16u};
+    const coordType eGraphPos = {51u,  2u};
     const coordType tGraphPos = {51u, 19u};
 
     // initialize to 0, so in the first iteration the window borders will be printed
@@ -178,17 +178,24 @@ int main(int argc, char* const argv[]) //---------------------------------------
         {
             CLEAR_SCREEN;
             PRINT_FAIL("Terminal size too small; resize it to display data...");
+
+            // aquire and process the data even when nothing is shown so that min/max/avg/history are updated
+            num_getSvi2();
+            num_getLoad();
+            dot_refresh();
         }
         else // start normal operation
         {
             // aquire and process the data
-            num_svi2(svi2Pos.xPos, svi2Pos.yPos);
-            num_load(loadPos.xPos, loadPos.yPos);
-
-            // refresh and print graph buffers
+            num_getSvi2();
+            num_getLoad();
             dot_refresh();
-            dot_eGraph(eGraphPos.xPos, eGraphPos.yPos);
-            dot_tGraph(tGraphPos.xPos, tGraphPos.yPos);
+
+            // print all numeric data, then refresh the graphs and print them
+            num_printSvi2(svi2Pos.xPos,   svi2Pos.yPos);
+            num_printLoad(loadPos.xPos,   loadPos.yPos);
+            dot_eGraph( eGraphPos.xPos, eGraphPos.yPos);
+            dot_tGraph( tGraphPos.xPos, tGraphPos.yPos);
 
             fflush(stdout); // stop text flickering
         }

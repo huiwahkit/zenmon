@@ -15,11 +15,18 @@
 //======================================================================================================================
 // API
 //======================================================================================================================
+// management
 void num_init(void);
 void num_deinit(void);
-void num_svi2(const uint16 xPos, const uint16 yPos);
-void num_load(const uint16 xPos, const uint16 yPos);
 void num_exportDB(metricsType** const outDB);
+
+// getters
+void num_getSvi2(void);
+void num_getLoad(void);
+
+// printers
+void num_printSvi2(      uint16 xPos, const uint16 yPos);
+void num_printLoad(const uint16 xPos, const uint16 yPos);
 
 //======================================================================================================================
 // END OF FILE

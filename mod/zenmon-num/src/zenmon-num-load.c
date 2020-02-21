@@ -35,34 +35,34 @@ static void load_getMemUsg() //-------------------------------------------------
 
     static bool checkedOnce = FALSE;
 
-    fseek((*sDB).memFD, 0, SEEK_SET);
-    while(NULL != fgets(line, LEN_LINE, (*sDB).memFD))
+    fseek((*sDB).ramFD, 0, SEEK_SET);
+    while(NULL != fgets(line, LEN_LINE, (*sDB).ramFD))
     {
         // this if is VERY barbaric, but it's MUCH faster than strstr
         if(('F' == line[3]) && ('r' == line[4])) // found "MemFree"
         {
-            freeMem = ((atoi(line + MEM_AVAIL_OFFSET) / 1000u)); // MB
+            freeMem = ((atoi(line + RAM_AVAIL_OFFSET) / 1000u)); // MiB
             continue;
         }
         else if(('f' == line[2]) && ('f' == line[3])) // found "Buffers"
         {
-            freeMem += ((atoi(line + MEM_AVAIL_OFFSET) / 1000u)); // MB
+            freeMem += ((atoi(line + RAM_AVAIL_OFFSET) / 1000u)); // MiB
             continue;
         }
         else if(('C' == line[0]) && ('a' == line[1])) // found "Cached"
         {
-            freeMem += ((atoi(line + MEM_AVAIL_OFFSET) / 1000u)); // MB
+            freeMem += ((atoi(line + RAM_AVAIL_OFFSET) / 1000u)); // MiB
             continue;
         }
         else if((FALSE == checkedOnce) && ('m' == line[2]) && ('T' == line[3]) && ('o' == line[4])) // found "MemTotal"
         {
-            (*sDB).memAll = (atoi(line + MEM_TOTAL_OFFSET) / 1000u); // MB; this value is only acquired once
+            (*sDB).ramAll = (atoi(line + RAM_TOTAL_OFFSET) / 1000u); // MiB; this value is only acquired once
 
             // keep the "used/total" string centered
-                 if(1000u    > (*sDB).memAll) { ramUsgOffset = 18u; ramUsgFormat = "%3u/%3u"; }
-            else if(10000u   > (*sDB).memAll) { ramUsgOffset = 17u; ramUsgFormat = "%4u/%4u"; }
-            else if(100000u  > (*sDB).memAll) { ramUsgOffset = 16u; ramUsgFormat = "%5u/%5u"; }
-            else if(1000000u > (*sDB).memAll) { ramUsgOffset = 15u; ramUsgFormat = "%6u/%6u"; }
+                 if(1000u    > (*sDB).ramAll) { ramUsgOffset = 18u; ramUsgFormat = "%3u/%3u"; }
+            else if(10000u   > (*sDB).ramAll) { ramUsgOffset = 17u; ramUsgFormat = "%4u/%4u"; }
+            else if(100000u  > (*sDB).ramAll) { ramUsgOffset = 16u; ramUsgFormat = "%5u/%5u"; }
+            else if(1000000u > (*sDB).ramAll) { ramUsgOffset = 15u; ramUsgFormat = "%6u/%6u"; }
             else                              { ramUsgOffset =  7u; ramUsgFormat = "your amount of RAM is extreme"; };
 
             checkedOnce = TRUE; // never reachable again after this
@@ -70,7 +70,7 @@ static void load_getMemUsg() //-------------------------------------------------
         else;
     }
 
-    (*sDB).memUsg = (*sDB).memAll - freeMem;
+    (*sDB).ramUsg = (*sDB).ramAll - freeMem;
 }
 
 static void load_getCpuUsg(void) //---------------------------------------------------------------------- load_getCpuUsg
@@ -298,9 +298,18 @@ void load_init(sysLoadType* const inDB) //--------------------------------------
     sDB = inDB;
 }
 
-void load_sysInfo(const uint16 xPos, const uint16 yPos) //------------------------------------------------- load_sysInfo
+void load_getCpuBar(void)
 {
-    // these positions depend on where static labels are printed in zenmon-box.c
+    load_getCpuUsg();
+    load_getCpuMhz();
+}
+
+void load_printSysInfo(const uint16 xPos, const uint16 yPos) //--------------------------------------- load_printSysInfo
+{
+    // data acquired here is not dependent on the last polling cycle
+    // so there is no need to acquire it when the terminal is too small to display the windows
+
+    // these hardcoded positions depend on where the static labels are printed in zenmon-box.c
 
     struct sysinfo sysInfo;
 
@@ -315,25 +324,28 @@ void load_sysInfo(const uint16 xPos, const uint16 yPos) //----------------------
                                                        sysInfo.loads[2] / ((float)(1u << SI_LOAD_SHIFT)));
 }
 
-void load_memBar(const uint16 xPos, const uint16 yPos) //--------------------------------------------------- load_memBar
+void load_printRamBar(const uint16 xPos, const uint16 yPos) //----------------------------------------- load_printRamBar
 {
-    // these positions depend on where static labels are printed in zenmon-box.c
+    // data acquired here is not dependent on last polling cycle
+    // so there is no need to acquire it when the terminal is too small to display the windows
+
+    // these hardcoded positions depend on where the static labels are printed in zenmon-box.c
 
     load_getMemUsg(); // call this first to avoid div/0
 
     // RAM transformed in usage bar characters
-    const uint32 mbPerBox = (*sDB).memAll / RAM_BAR_LEN; // worth in MB of a box
-    const uint32 mbPerSeg =      mbPerBox / SEG_PER_BOX; // worth in MB of a seg
-    const uint16     yBar = yPos + 2u;                   // start printing from the 2nd X coord
+    const uint32 mibPerBox = (*sDB).ramAll / RAM_BAR_LEN; // worth in MiB of a box
+    const uint32 mibPerSeg =     mibPerBox / SEG_PER_BOX; // worth in MiB of a seg
+    const uint16      yBar = yPos + 2u;                   // start printing from the 2nd X coord
 
-    uint8     boxes = (*sDB).memUsg / mbPerBox; // boxes to fill
-    uint16    segMB = (*sDB).memUsg % mbPerBox; // MB to display with segments
+    uint8     boxes = (*sDB).ramUsg / mibPerBox; // boxes to fill
+    uint16   segMiB = (*sDB).ramUsg % mibPerBox; // MiB to display with segments
     sint8*   colour = F_RST;
     uint8  boxIndex;
 
-    PRINTL(xPos + ramUsgOffset, yPos + 1u, ramUsgFormat, (*sDB).memUsg, (*sDB).memAll); // print "used/total"
+    PRINTL(xPos + ramUsgOffset, yPos + 1u, ramUsgFormat, (*sDB).ramUsg, (*sDB).ramAll); // print "used/total"
 
-    if((0u == boxes) && (mbPerSeg > segMB)) segMB = mbPerSeg; // make sure no bar is invisible
+    if((0u == boxes) && (mibPerSeg > segMiB)) segMiB = mibPerSeg; // make sure no bar is invisible
 
     for(boxIndex = 0u; boxIndex < RAM_BAR_LEN; boxIndex++)
     {
@@ -346,32 +358,29 @@ void load_memBar(const uint16 xPos, const uint16 yPos) //-----------------------
         }
         else if(boxIndex == boxes) // print the last character, the segment, with 8 possible values
         {
-                 if(segMB <  mbPerSeg      ) { PRINTL(xPos + boxIndex, yBar, "%s "  , colour);         continue; }
-            else if(segMB < (mbPerSeg * 2u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258F); continue; }
-            else if(segMB < (mbPerSeg * 3u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258E); continue; }
-            else if(segMB < (mbPerSeg * 4u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258D); continue; }
-            else if(segMB < (mbPerSeg * 5u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258C); continue; }
-            else if(segMB < (mbPerSeg * 6u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258B); continue; }
-            else if(segMB < (mbPerSeg * 7u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258A); continue; }
-            else if(segMB < (mbPerSeg * 8u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x2589); continue; }
+                 if(segMiB <  mibPerSeg      ) { PRINTL(xPos + boxIndex, yBar, "%s "  , colour);         continue; }
+            else if(segMiB < (mibPerSeg * 2u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258F); continue; }
+            else if(segMiB < (mibPerSeg * 3u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258E); continue; }
+            else if(segMiB < (mibPerSeg * 4u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258D); continue; }
+            else if(segMiB < (mibPerSeg * 5u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258C); continue; }
+            else if(segMiB < (mibPerSeg * 6u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258B); continue; }
+            else if(segMiB < (mibPerSeg * 7u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x258A); continue; }
+            else if(segMiB < (mibPerSeg * 8u)) { PRINTL(xPos + boxIndex, yBar, "%s%lc", colour, 0x2589); continue; }
             else; // unreachable
         }
-        else // clear the rest of the boxes in case mem usage goes down
+        else // clear the rest of the boxes in case RAM usage goes down
         {
             PRINTL(xPos + boxIndex, yBar, "%s ", colour);
         }
     }
 }
 
-void load_cpuBar(const uint16 xPos, const uint16 yPos) //--------------------------------------------------- load_cpuBar
+void load_printCpuBar(const uint16 xPos, const uint16 yPos) //----------------------------------------- load_printCpuBar
 {
-    // these positions depend on where static labels are printed in zenmon-box.c
+    // these hardcoded positions depend on where the static labels are printed in zenmon-box.c
 
     const uint16 yUsg = yPos + 1u;
     const uint16 yMhz = yPos + 7u;
-
-    load_getCpuUsg();
-    load_getCpuMhz();
 
     // print usage bars for CCD0
     load_printCpuUsg(xPos      , yUsg, (*sDB).cpuUsg,  0u,  3u); // print usg bars for 4 threads

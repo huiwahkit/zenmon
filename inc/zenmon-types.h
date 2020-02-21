@@ -70,11 +70,11 @@ typedef struct sysLoadTypeTag // system load
 {
     FILE*      mhzFD;
     FILE*      usgFD;
-    FILE*      memFD;
+    FILE*      ramFD;
     uint16     cpuMhz[CPU_CORES];
     cpuUsgType cpuUsg[CPU_THREADS];
-    uint32     memUsg;
-    uint32     memAll;
+    uint32     ramUsg;
+    uint32     ramAll;
 } sysLoadType;
 
 //======================================================================================================================

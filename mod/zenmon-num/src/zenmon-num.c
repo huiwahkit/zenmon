@@ -65,7 +65,7 @@ void num_init(void) //----------------------------------------------------------
 
     failure |= num_openFile(&(sDB.mhzFD)   , FILE_MHZ);
     failure |= num_openFile(&(sDB.usgFD)   , FILE_USG);
-    failure |= num_openFile(&(sDB.memFD)   , FILE_MEM);
+    failure |= num_openFile(&(sDB.ramFD)   , FILE_RAM);
 
     if(FALSE != failure) // if any files don't exist then exit program
     {
@@ -112,29 +112,40 @@ void num_deinit(void) //--------------------------------------------------------
 
     if(NULL != sDB.mhzFD   ) fclose(sDB.mhzFD);
     if(NULL != sDB.usgFD   ) fclose(sDB.usgFD);
-    if(NULL != sDB.memFD   ) fclose(sDB.memFD);
-}
-
-void num_svi2(const uint16 xPos, const uint16 yPos) //--------------------------------------------------------- num_svi2
-{
-    // fill the window elements
-    svi2_getStatus();
-    svi2_setMinMax();
-    svi2_setAvg();
-    svi2_printMetrics(xPos, yPos + 2u);
-}
-
-void num_load(const uint16 xPos, const uint16 yPos) //--------------------------------------------------------- num_load
-{
-    // fill the window elements
-    load_sysInfo(xPos + 2u, yPos +  1u);
-    load_memBar( xPos + 2u, yPos +  7u);
-    load_cpuBar( xPos + 2u, yPos + 11u);
+    if(NULL != sDB.ramFD   ) fclose(sDB.ramFD);
 }
 
 void num_exportDB(metricsType** const outDB) //------------------------------------------------------------ num_exportDB
 {
     *outDB = &mDB; // let the dot drawing functions access the metrics database
+}
+
+void num_getSvi2(void) //----------------------------------------------------------------------------------- num_getSvi2
+{
+    svi2_getStatus();
+    svi2_setMinMax();
+    svi2_setAvg();
+}
+
+void num_getLoad(void) //----------------------------------------------------------------------------------- num_getLoad
+{
+    load_getCpuBar();
+}
+
+void num_printSvi2(uint16 xPos, const uint16 yPos) //----------------------------------------------------- num_printSvi2
+{
+    // these hardcoded positions depend on where the static labels are printed in zenmon-box.c
+
+    svi2_printTable(xPos, yPos + 2u);
+}
+
+void num_printLoad(const uint16 xPos, const uint16 yPos) //----------------------------------------------- num_printLoad
+{
+    // these hardcoded positions depend on where the static labels are printed in zenmon-box.c
+
+    load_printSysInfo(xPos + 2u, yPos +  1u);
+    load_printRamBar( xPos + 2u, yPos +  7u);
+    load_printCpuBar( xPos + 2u, yPos + 11u);
 }
 
 //======================================================================================================================

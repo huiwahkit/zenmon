@@ -15,8 +15,13 @@
 //======================================================================================================================
 // API
 //======================================================================================================================
+// management
 void dot_init(void);
+
+// data handling
 void dot_refresh(void);
+
+// printers
 void dot_eGraph(uint16 xPos, const uint16 yPos);
 void dot_tGraph(uint16 xPos, const uint16 yPos);
 

@@ -14,7 +14,7 @@
 // file paths; these are checked at runtime and if any are missing the program will notify and exit
 #define FILE_MHZ          "/proc/cpuinfo"     // cpu core   frequency
 #define FILE_USG          "/proc/stat"        // cpu thread usage
-#define FILE_MEM          "/proc/meminfo"     // memory     usage
+#define FILE_RAM          "/proc/meminfo"     // RAM        usage
 
 // load window size
 #define LEN_LOAD_W_X      47u                 // window X size in characters
@@ -26,11 +26,11 @@
 #define SEG_PER_BOX       8u                  // the full block has 8 segments
 #define LEN_LINE          512u                // I don't expect any lines to be longet than this while reading
 
-// memory usage bar config
+// RAM usage bar config
 #define RAM_BAR_LEN       (LEN_LOAD_W_X - 4u) // RAM bar length in characters
 #define RAM_BAR_LIM       (RAM_BAR_LEN  / 2u) // bar turns red at 50% RAM usage
-#define MEM_AVAIL_OFFSET  13u                 // characters to skip when reading the available memory line
-#define MEM_TOTAL_OFFSET  9u                  // characters to skip when reading the total memory line
+#define RAM_AVAIL_OFFSET  13u                 // characters to skip when reading the available RAM line
+#define RAM_TOTAL_OFFSET  9u                  // characters to skip when reading the total     RAM line
 
 // core MHz bars config
 #define MHZ_CPU_MAX       5000u               // max value of the MHz bar

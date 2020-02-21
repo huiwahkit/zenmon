@@ -20,7 +20,7 @@
 #define PRINT_FAIL(...)     printf("[ %sFAIL%s ] ", F_RED, F_RST); printf(__VA_ARGS__); printf("%s\n", F_RST)
 #define PRINT_INFO(...)     printf("[ %sINFO%s ] ", F_CYN, F_RST); printf(__VA_ARGS__); printf("%s\n", F_RST)
 #define PRINT_TEXT(...)     printf("  %s    %s   ", F_RST, F_RST); printf(__VA_ARGS__); printf("%s\n", F_RST)
-#if defined (PRINT_VERB)
+#if defined (ENABLE_VERBOSITY)
     #define PRINT_VERB(...) printf("[ %sVERB%s ] ", F_MAG, F_RST); printf(__VA_ARGS__); printf("%s\n", F_RST)
 #else
     #define PRINT_VERB(...)

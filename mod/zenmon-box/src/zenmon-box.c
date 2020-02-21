@@ -46,6 +46,8 @@ static void box_draw(const uint16 xPos , const uint16 yPos , \
 //======================================================================================================================
 void box_svi2(const sint8* title, uint16 xPos, uint16 yPos, const sint8* colour) //---------------------------- box_svi2
 {
+    // these hardcoded positions must be kept in mind in the printer functions, when aligning all text
+
     box_draw(xPos, yPos, LEN_SVI2_W_X, LEN_SVI2_W_Y, colour);
 
     xPos += 2u;
@@ -68,6 +70,8 @@ void box_svi2(const sint8* title, uint16 xPos, uint16 yPos, const sint8* colour)
 
 void box_load(const sint8* title, uint16 const xPos, uint16 const yPos, const sint8* colour) //---------------- box_load
 {
+    // these hardcoded positions must be kept in mind in the printer functions, when aligning all text
+
     struct utsname osInfo;
 
     uname(&osInfo); // get the kernel name and release

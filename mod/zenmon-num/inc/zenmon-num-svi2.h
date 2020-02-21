@@ -12,11 +12,18 @@
 //======================================================================================================================
 // API
 //======================================================================================================================
+// management
 void svi2_init(metricsType* const inDB);
+
+// getters
 void svi2_getStatus(void);
+
+// data handling
 void svi2_setMinMax(void);
 void svi2_setAvg(void);
-void svi2_printMetrics(uint16 xPos, const uint16 yPos);
+
+// print tables
+void svi2_printTable(uint16 xPos, const uint16 yPos);
 
 //======================================================================================================================
 // END OF FILE
