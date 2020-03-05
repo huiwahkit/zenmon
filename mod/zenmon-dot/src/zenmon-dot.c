@@ -119,8 +119,8 @@ void dot_eGraph(uint16 xPos, const uint16 yPos) //------------------------------
 {
     // draw graphs
     xPos += 1u;
-    dot_eGraphDraw(gDB.vcore, xPos, yPos                    );
-    dot_eGraphDraw(gDB.acore, xPos, yPos +  LEN_GR_C_Y      );
+    dot_eGraphDraw(gDB.vcore, xPos, yPos);
+    dot_eGraphDraw(gDB.acore, xPos, yPos +  LEN_GR_C_Y);
     dot_eGraphDraw(gDB.wcore, xPos, yPos + (LEN_GR_C_Y * 2u));
 
     // print current values; voltage is converted from mV to cV
@@ -134,8 +134,8 @@ void dot_tGraph(uint16 xPos, const uint16 yPos) //------------------------------
 {
     // draw graphs
     xPos += 1;
-    dot_tGraphDraw(gDB.cdie , xPos, yPos                    );
-    dot_tGraphDraw(gDB.cctl , xPos, yPos +  LEN_GR_C_Y      );
+    dot_tGraphDraw(gDB.cdie , xPos, yPos);
+    dot_tGraphDraw(gDB.cctl , xPos, yPos +  LEN_GR_C_Y);
     dot_tGraphDraw(gDB.cccd0, xPos, yPos + (LEN_GR_C_Y * 2u));
     dot_tGraphDraw(gDB.cccd1, xPos, yPos + (LEN_GR_C_Y * 3u));
 

@@ -63,7 +63,7 @@ static void load_getMemUsg() //-------------------------------------------------
             else if(10000u   > (*sDB).ramAll) { ramUsgOffset = 17u; ramUsgFormat = "%4u/%4u"; }
             else if(100000u  > (*sDB).ramAll) { ramUsgOffset = 16u; ramUsgFormat = "%5u/%5u"; }
             else if(1000000u > (*sDB).ramAll) { ramUsgOffset = 15u; ramUsgFormat = "%6u/%6u"; }
-            else                              { ramUsgOffset =  7u; ramUsgFormat = "your amount of RAM is extreme"; };
+            else                              { ramUsgOffset =  7u; ramUsgFormat = "your amount of RAM is extreme"; }
 
             checkedOnce = TRUE; // never reachable again after this
         }

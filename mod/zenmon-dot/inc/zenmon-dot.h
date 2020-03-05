@@ -18,7 +18,7 @@
 // management
 void dot_init(void);
 
-// data handling
+// handlers
 void dot_refresh(void);
 
 // printers

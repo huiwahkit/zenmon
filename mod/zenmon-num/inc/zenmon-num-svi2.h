@@ -18,11 +18,11 @@ void svi2_init(metricsType* const inDB);
 // getters
 void svi2_getStatus(void);
 
-// data handling
+// handlers
 void svi2_setMinMax(void);
 void svi2_setAvg(void);
 
-// print tables
+// printers
 void svi2_printTable(uint16 xPos, const uint16 yPos);
 
 //======================================================================================================================

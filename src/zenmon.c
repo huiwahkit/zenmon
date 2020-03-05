@@ -179,14 +179,14 @@ int main(int argc, char* const argv[]) //---------------------------------------
             CLEAR_SCREEN;
             PRINT_FAIL("Terminal size too small; resize it to display data...");
 
-            // aquire and process the data even when nothing is shown so that min/max/avg/history are updated
+            // acquire and process the data even when nothing is shown so that min/max/avg/history are updated
             num_getSvi2();
             num_getLoad();
             dot_refresh();
         }
         else // start normal operation
         {
-            // aquire and process the data
+            // acquire and process the data
             num_getSvi2();
             num_getLoad();
             dot_refresh();

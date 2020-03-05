@@ -93,7 +93,7 @@ I might get to these at some point:
     * I did not get the memory info from `sysinfo` because it has no data on cached RAM
     * other monitoring tools might report slightly different values, but still relatively close
 
-The next are all intentional, mostly because of the `KISS principle` (_and because I am lazy..._ but seriously, I did try to keep things as simple as possible; I guess you will be the judge of that):
+The next are all intentional, mostly because of the `KISS principle`:
 * Average values calculations start after 10 samples; until then they are 0
 * In the first polling cycle, CPU thread usage is calculated since startup; this is because of the way `/proc/stat` works
 

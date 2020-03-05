@@ -31,13 +31,13 @@ static void box_draw(const uint16 xPos , const uint16 yPos , \
     // draw sides
     for(index = xPos + 1; index < (xPos + xSize - 1); index++)
     {
-        PRINTL(index            , yPos             , "%s%lc", colour, 0x2500);
-        PRINTL(index            , yPos + ySize - 1u, "%s%lc", colour, 0x2500);
+        PRINTL(index, yPos             , "%s%lc", colour, 0x2500);
+        PRINTL(index, yPos + ySize - 1u, "%s%lc", colour, 0x2500);
     }
     for(index = yPos + 1; index < (yPos + ySize - 1); index++)
     {
-        PRINTL(xPos             , index            , "%s%lc", colour, 0x2502);
-        PRINTL(xPos + xSize - 1u, index            , "%s%lc", colour, 0x2502);
+        PRINTL(xPos             , index, "%s%lc", colour, 0x2502);
+        PRINTL(xPos + xSize - 1u, index, "%s%lc", colour, 0x2502);
     }
 }
 
@@ -77,7 +77,7 @@ void box_load(const sint8* title, uint16 const xPos, uint16 const yPos, const si
     uname(&osInfo); // get the kernel name and release
 
     box_draw(xPos, yPos, LEN_LOAD_W_X, LEN_LOAD_W_Y, colour);
-    PRINTL(xPos +  2u, yPos      , " %s ", title);
+    PRINTL(xPos +  2u, yPos, " %s ", title);
 
     // static labels for sysinfo
     PRINTL(xPos +  2u, yPos  + 1u, "─────────────────── %sSYS%s ───────────────────", F_BLD, F_RST);
